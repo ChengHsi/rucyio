@@ -1,4 +1,4 @@
-ruckio
+rucyio
 ======
 
-some stuff I use when setup rucy
+some stuff I use when setup rucyio
