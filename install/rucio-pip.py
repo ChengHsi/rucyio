@@ -11,7 +11,7 @@ with open("/opt/rucio/tools/pip-requires") as f:
             print line[0]
             subprocess.call(["pip", "install", line[0]])
 
-pip_list=["argcomplete==0.8.0", 'dogpile.cache==0.5.3', 'kerberos==1.1.1', 'requests-kerberos==0.4.0', 'wsgiref==0.1.2', 'urllib3==1.7.1', 'requests==2.2.1', 'distribute==0.7.3', "kerberos==1.1.1", "requests-kerberos==0.4.0", "MySQL-python"]
+pip_list=["argcomplete==0.8.0", 'dogpile.cache==0.5.3', 'kerberos==1.1.1', 'requests-kerberos==0.4.0', 'wsgiref==0.1.2', 'urllib3==1.7.1', 'requests==2.2.1', 'distribute==0.7.3', "kerberos==1.1.1", "requests-kerberos==0.4.0", "MySQL-python", 'python-ldap']
 easy_list = ["PIL==1.1.7"]
 
 for i in pip_list:
