@@ -1,6 +1,8 @@
 from rucio.client.rseclient import RSEClient
 rse = RSEClient()
 
-print rse.list_rse_attributes('TW-EOS00_AMS02DATADISK')
+for x in rse.list_rses():
+    print x
+#print rse.get_rse('TW-EOS00_AMS02DATADISK')
 
 
