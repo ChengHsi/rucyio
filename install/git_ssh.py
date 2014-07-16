@@ -1,4 +1,5 @@
 import subprocess, os
+subprocess.call(["git", "config", "user.name", "Cheng-Hsi Chao"])
 sub = subprocess.Popen(["find", os.environ['HOME'], "-name", ".git"], stdout=subprocess.PIPE)
 sub = sub.communicate()
 old_string = 'https://github.com/'
