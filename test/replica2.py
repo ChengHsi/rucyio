@@ -10,13 +10,12 @@ from rucio.client.ruleclient import RuleClient
 ruleCli = RuleClient()
 from rucio.client.rseclient import RSEClient
 rseCli = RSEClient()
-
-counter = 0
+from rucio.common import exception
 argv_file =str(sys.argv[1])
 with open(argv_file, 'r') as dids:
     for did in dids:
         did = did.rstrip('\n')
-
+        print did
         did_list = did.split(':')
         scope = did_list[0]
         filename = did_list[1]
@@ -24,25 +23,30 @@ with open(argv_file, 'r') as dids:
         adler32 = ''
         md5 = ''
         bytes = 0
-        counter = counter + 1 
-        if counter > 10:
-            break
-        print 'before:'
+        #print 'before:'
         for x in repCli.list_replicas([{'scope': scope, 'name': filename}]):
             adler32 = x['adler32']
             md5 = x['md5']
             bytes = x['bytes']
-            print x
+        #    print x
         file_meta = didCli.get_metadata(scope, filename) 
         ##repCli.delete_replicas(rse_name, [{'scope': scope, 'name': filename}])
         ##print 'after deletion:'
         ##for x in rep.list_replicas([{'scope': scope, 'name': filename}]):
         ##    print x
-        repCli.add_replica(rse_name, scope, filename, bytes, adler32, md5, file_meta)
-        ruleCli
-        print 'after add:'
-        for x in repCli.list_replicas([{'scope': scope, 'name': filename}]):
-            print x
+        try:
+            repCli.add_replica(rse_name, scope, filename, bytes, adler32, md5, file_meta)
+        except exception.Duplicate:
+            print 'already replicated, but adding rules'
+            ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1, \
+            rse_expression=rse_name, grouping='DATASET')
+            continue
+        ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1, \
+        rse_expression=rse_name, grouping='DATASET')
+        
+        #print 'after add:'
+        #for x in repCli.list_replicas([{'scope': scope, 'name': filename}]):
+        #    print x
 ###################################################
 #for x in rseCli.list_rses('TW-EOS01_AMS02DATADISK'):
 #    print x
