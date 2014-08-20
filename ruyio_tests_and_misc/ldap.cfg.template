@@ -1,0 +1,31 @@
+# Copyright European Organization for Nuclear Research (CERN)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# You may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Authors:
+# - Cheng-Hsi Chao, <cheng-hsi.chaos@cern.ch>, 2014
+
+[ldap]
+ldap_host = vt-095.grid.sinica.edu.tw/
+baseDN = dc=UI01,dc=grid,dc=sinica,dc=edu,dc=tw
+searchFilter = (objectClass=OpenLDAPperson)
+
+cacertfile = /etc/grid-security/certificates
+certfile = /etc/grid-security/hostcert.pem
+keyfile = /etc/grid-security/hostkey.pem
+
+#default to anonymous binding,
+login_dn = DEFAULT
+#leave blank for prompt
+password = 
+
+[attributes]
+#Mapping for LDAP attributes to Rucio Identity
+accounts = uid
+uid = uid
+email = mail
+identity = gecos
+auth_type = DEFAULT
+
