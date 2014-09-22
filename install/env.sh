@@ -19,7 +19,7 @@ yum install -y mysql-5.1.73-3.el6_5.x86_64
 yum install -y mysql-devel-5.1.73-3.el6_5.x86_64
 service mysqld start
 mysqladmin -u root password asgcddm
-mysqladmin -uroot -p asgcddm create rucio
+#mysqladmin -uroot -p asgcddm create rucio
 #export WORKON_HOME=$HOME/.virtualenvs
 #export PROJECT_HOME=$HOME/Devel
 #source /usr/bin/virtualenvwrapper.sh
