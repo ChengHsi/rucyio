@@ -1,3 +1,15 @@
+<<<<<<< HEAD
+=======
+#!/usr/bin/env python
+
+"""
+read and xrdcp
+
+read from filelist
+xrdcp to destination
+"""
+
+>>>>>>> original read_n_xrdcp
 #
 ## Code goes here.
 #
@@ -23,8 +35,8 @@ def read(file):
            # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos01.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
            cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1343856875.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1343856875.00000001.root'
            # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1373572204.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1373572204.00000001.root'
-           # print hash(scope, line)
-
+           # print hash(scope, line)           
+           
            # sub = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
            try:
                # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
@@ -33,7 +45,7 @@ def read(file):
                while sub.poll() is None:
                    l = sub.stdout.readline() # This blocks until it receives a newline.
                    print l
-               # When the subprocess terminates there might be unconsumed output
+               # When the subprocess terminates there might be unconsumed output 
                # that still needs to be processed.
                print sub.stdout.read()
            except subprocess.CalledProcessError as e:
@@ -41,7 +53,6 @@ def read(file):
                with open('/afs/cern.ch/user/c/cchao2/rucyio/pass4/exist_file', 'wr') as file2:
                     file2.write(line)
            # break
-
 
 def sighandler():
     with open('/afs/cern.ch/user/c/cchao2/rucyio/pass4/just_in_case', 'wr') as file3:
@@ -59,7 +70,10 @@ def main():
             signum = getattr(signal,i)
             signal.signal(signum,sighandler())
         except RuntimeError,m:
-            print "Skipping %s"%i
+            print "Skipping %s"%i  
 
 
-
+if '__main__':
+#    read(file)
+    main()
+        
