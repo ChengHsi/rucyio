@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
 """
-read and xrdcp
+AMS02 - Paramigrator
 
+trying to add the concept of parellel to the code
 read from filelist
 xrdcp to destination
 """
 
 #
-## Code goes here.
+# Code goes here.
 #
-
+from multiprocessing import Process, Manager
+import time
+import itertools 
 import sys, os, hashlib, subprocess, shlex, signal, datetime, time, errno
+import mmap
 # print os.getcwd()
 file = str(sys.argv[1])
 # print os.chdir(file1)
@@ -19,39 +23,46 @@ scope = 'ams-2011B-ISS.B620-pass4'
 count = 0
 current_line = None
 write_dir = '/afs/cern.ch/user/c/cchao2/rucyio/pass4/result/'
+num_workers = 8 
 
 def hash(scope, line):
     hstr = hashlib.md5('%s:%s' % (scope, line)).hexdigest()
-    return '/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/' + '%s/%s/%s' % (hstr[0:2], hstr[2:4], line)
+    return '/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/' + '%s/%s/%s' % (hstr[0:2], hstr[2:4], line.rstrip())
+
 
 def read(file):
     """
     readline from file,
     xrdcp to destination
-    write result in the write_dir
     """
-    with open(file, 'rw') as file1:
+    with open(file, 'r') as file1:
         for line in file1:
             global current_line
             global count
             current_line = line
             count = count + 1
-            # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos01.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
-            cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1343856875.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1343856875.00000001.root'
-            # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1373572204.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1373572204.00000001.root'
-            try:
-                # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
-                sub = subprocess.check_call(shlex.split(cmd))
-                # sub = subprocess.check_output(shlex.split(cmd), stderr=subprocess.STDOUT)
-                while sub.poll() is None:
-                    l = sub.stdout.readline() # This blocks until it receives a newline.
-                    print l
-                # When the subprocess terminates print unconsumed output and write to finisged_filelist
-                print sub.stdout.read()
-                write('finished_filelist', line)
-            except subprocess.CalledProcessError as e:
-                # In the case of duplicate file
-                write('exist_filelist', line)
+            xrdcp(line)
+
+def xrdcp(line):
+    """
+    """
+    cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos01.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
+    # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1343856875.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1343856875.00000001.root'
+    # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1373572204.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1373572204.00000001.root'
+    try:
+        # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
+        sub = subprocess.check_call(shlex.split(cmd))
+        print '\n %s finished. \n' %(line)
+        # sub = subprocess.check_output(shlex.split(cmd), stderr=subprocess.STDOUT)
+        # while sub.poll() is None:
+        #    l = sub.stdout.readline()  # This blocks until it receives a newline.
+        #    print l
+        # When the subprocess terminates print unconsumed output and write to finished_filelist
+        # print sub.stdout.read()
+        write('finished_filelist', line)
+    except subprocess.CalledProcessError:
+        # In the case of duplicate file
+        write('exist_filelist', line)
 
 def write(filepath, message):
     """
@@ -59,13 +70,16 @@ def write(filepath, message):
     """
     # make sure that filename is just the name of the file
     if '/' in filepath:
-        filename = filepath[filepath.rfind('/')+1:]
+        filename = filepath[filepath.rfind('/') + 1:]
     else:
         filename = filepath
     path = write_dir + filepath
-    mkdir_p(path[:-len(filename)-1])
-    with open(path, 'a+') as file2: 
-        file2.write(message)
+    mkdir_p(path[:-len(filename) - 1])
+    with open(path, 'a+') as file2:
+        s = mmap.mmap(file2.fileno(), 0, access=mmap.ACCESS_READ)
+        if s.find(message) == -1:
+            file2.write(message)
+
 
 def mkdir_p(path):
     """
@@ -73,10 +87,12 @@ def mkdir_p(path):
     """
     try:
         os.makedirs(path)
-    except OSError as exc: # Python >2.5
+    except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
-        else: raise
+        else:
+            raise
+
 
 def sighandler(signum, frame):
     """
@@ -86,18 +102,20 @@ def sighandler(signum, frame):
     write(str(timestamp()[:10]) + '/sighandler_result', message)
     sys.exit(1)
 
+
 def signal_trapper():
     """
     trap all caughtable signal through sighandler
     """
     for i in [x for x in dir(signal) if x.startswith("SIG")]:
         try:
-            signum = getattr(signal,i)
-            signal.signal(signum,sighandler)
+            signum = getattr(signal, i)
+            signal.signal(signum, sighandler)
         except RuntimeError as e:
-            sighandler(e, None) 
+            sighandler(e, None)
         except ValueError:
-            pass 
+            pass
+
 
 def timestamp():
     """
@@ -107,13 +125,41 @@ def timestamp():
     return standard_time
 
 
-def main():
-    try:
-        while True:
-            read(file)
-    except:
-        signal_trapper()
-
-if '__main__':
-    main()
+def do_work(in_queue, out_list):
+    while True:
+        item = in_queue.get()
+        line_no, line = item
+        # exit signal 
+        if line == None:
+            return
         
+        # work
+        xrdcp(line)
+        out_list.append(line)
+
+
+if __name__ == "__main__":
+
+    manager = Manager()
+    results = manager.list()
+    work = manager.Queue(num_workers)
+
+    # start for workers    
+    pool = []
+    for i in xrange(num_workers):
+        p = Process(target=do_work, args=(work, results))
+        p.start()
+        pool.append(p)
+
+    # produce data
+    with open(file) as f:
+        iters = itertools.chain(f, (None,)*num_workers)
+        for num_and_line in enumerate(iters):
+            work.put(num_and_line)
+
+    for p in pool:
+        p.join()
+
+    # get the results
+    # example:  [(1, "foo"), (10, "bar"), (0, "start")]
+    print sorted(results)
