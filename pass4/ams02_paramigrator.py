@@ -3,9 +3,10 @@
 """
 AMS02 - Paramigrator
 
-trying to add the concept of parellel to the code
+parellel version of ams02-migrator 
 read from filelist
 xrdcp to destination
+at the start of each run, the finished_filelist and the existed_filelist should be consistent, not exactly the same, but at least same wc -l
 """
 
 #
@@ -50,9 +51,10 @@ def xrdcp(line):
     # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1343856875.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1343856875.00000001.root'
     # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1373572204.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1373572204.00000001.root'
     try:
+        #TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
         # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
         sub = subprocess.check_call(shlex.split(cmd))
-        print '\n %s finished. \n' %(line)
+        print '\n %s finished. \n' %(line.rstrip())
         # sub = subprocess.check_output(shlex.split(cmd), stderr=subprocess.STDOUT)
         # while sub.poll() is None:
         #    l = sub.stdout.readline()  # This blocks until it receives a newline.
@@ -76,6 +78,7 @@ def write(filepath, message):
     path = write_dir + filepath
     mkdir_p(path[:-len(filename) - 1])
     with open(path, 'a+') as file2:
+        # somehow file2 has to be already existant for mmap, a fancy way to prevent duplication
         s = mmap.mmap(file2.fileno(), 0, access=mmap.ACCESS_READ)
         if s.find(message) == -1:
             file2.write(message)
@@ -126,6 +129,9 @@ def timestamp():
 
 
 def do_work(in_queue, out_list):
+    """
+    work for multiprocessing workers
+    """
     while True:
         item = in_queue.get()
         line_no, line = item
@@ -135,6 +141,7 @@ def do_work(in_queue, out_list):
         
         # work
         xrdcp(line)
+        # TODO: the out_list part is unessary
         out_list.append(line)
 
 
@@ -159,7 +166,8 @@ if __name__ == "__main__":
 
     for p in pool:
         p.join()
-
+    
+    # TODO: get rid of this part
     # get the results
     # example:  [(1, "foo"), (10, "bar"), (0, "start")]
     print sorted(results)
