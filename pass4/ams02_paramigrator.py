@@ -3,7 +3,7 @@
 """
 AMS02 - Paramigrator
 
-parellel version of ams02-migrator 
+parellel version of ams02-migrator
 read from filelist
 xrdcp to destination
 at the start of each run, the finished_filelist and the existed_filelist should be consistent, not exactly the same, but at least same wc -l
@@ -13,8 +13,7 @@ at the start of each run, the finished_filelist and the existed_filelist should 
 # Code goes here.
 #
 from multiprocessing import Process, Manager
-import time
-import itertools 
+import itertools
 import sys, os, hashlib, subprocess, shlex, signal, datetime, time, errno
 import mmap
 # print os.getcwd()
@@ -24,7 +23,8 @@ scope = 'ams-2011B-ISS.B620-pass4'
 count = 0
 current_line = None
 write_dir = '/afs/cern.ch/user/c/cchao2/rucyio/pass4/result/'
-num_workers = 8 
+num_workers = 8
+
 
 def hash(scope, line):
     hstr = hashlib.md5('%s:%s' % (scope, line)).hexdigest()
@@ -44,17 +44,16 @@ def read(file):
             count = count + 1
             xrdcp(line)
 
+
 def xrdcp(line):
     """
     """
     cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos01.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
-    # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1343856875.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1343856875.00000001.root'
-    # cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/1373572204.00000001.root root://tw-eos01.grid.sinica.edu.tw//eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/6f/ed/1373572204.00000001.root'
     try:
-        #TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
+        # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
         # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
-        sub = subprocess.check_call(shlex.split(cmd))
-        print '\n %s finished. \n' %(line.rstrip())
+        subprocess.check_call(shlex.split(cmd))
+        print '\n %s finished. \n' % (line.rstrip())
         # sub = subprocess.check_output(shlex.split(cmd), stderr=subprocess.STDOUT)
         # while sub.poll() is None:
         #    l = sub.stdout.readline()  # This blocks until it receives a newline.
@@ -65,6 +64,7 @@ def xrdcp(line):
     except subprocess.CalledProcessError:
         # In the case of duplicate file
         write('exist_filelist', line)
+
 
 def write(filepath, message):
     """
@@ -135,23 +135,25 @@ def do_work(in_queue, out_list):
     while True:
         item = in_queue.get()
         line_no, line = item
-        # exit signal 
-        if line == None:
+        # exit signal
+        if line is None:
             return
-        
+
         # work
-        xrdcp(line)
+        exist = write_dir + 'exist_filelist'
+        with open(exist, 'r') as exist:
+            if line not in exist:
+                xrdcp(line)
         # TODO: the out_list part is unessary
         out_list.append(line)
 
 
 if __name__ == "__main__":
-
     manager = Manager()
     results = manager.list()
     work = manager.Queue(num_workers)
 
-    # start for workers    
+    # start for workers
     pool = []
     for i in xrange(num_workers):
         p = Process(target=do_work, args=(work, results))
@@ -160,13 +162,13 @@ if __name__ == "__main__":
 
     # produce data
     with open(file) as f:
-        iters = itertools.chain(f, (None,)*num_workers)
+        iters = itertools.chain(f, (None,) * num_workers)
         for num_and_line in enumerate(iters):
             work.put(num_and_line)
 
     for p in pool:
         p.join()
-    
+
     # TODO: get rid of this part
     # get the results
     # example:  [(1, "foo"), (10, "bar"), (0, "start")]
