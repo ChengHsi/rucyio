@@ -7,9 +7,6 @@ some function when I need to recursive ls through a Eos directory
 """
 import subprocess, shlex, os, sys
 
-def write(abs_path):
-    f_write = open('tw_eos02_result', 'w+')
-    f_write.write(eos_ls_recur(abs_path))
 
 def eos_ls_recur(abs_path):
     '''
@@ -25,7 +22,7 @@ def eos_ls_recur(abs_path):
     #import itertools
     #for target_dir in itertools.product(dir_list, repeat=2):
     #    cmd = 'eos ls -a %s%s/%s' %(abs_path, str(target_dir[0]), str(target_dir[1]))
-        print cmd
+        # print cmd
         # cmd2 = 'eos ls -al /eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/ff/1d/1376007942.00000001.root'
         # sub = subprocess.check_call(shlex.split(cmd), stderr=subprocess.STDOUT) #, stdout=subprocess.PIPE) #, stderr=None)
         try:
@@ -42,9 +39,13 @@ def eos_ls_recur(abs_path):
                 print abs_path + target_dir + '/' + target_dir2 + ':'
                 # print abs_path + str(target_dir[0]) + '/' + str(target_dir[1]) + ':'
                 print std_tuple[0].lstrip('.\n..\n')
-                f_write = open('tw_eos02_result', 'a')
-                f_write.write(std_tuple[0].lstrip('.\n..\n'))
+                if sys.argv[1] = None:
+                    f_write = open('tw_eos02_result', 'a')
+                    f_write.write(std_tuple[0].lstrip('.\n..\n'))
+                else:
                 # return std_tuple[0].lstrip('.\n..\n')
+                    f_write = open(sys.argv[1], 'a')
+                    f_write.write(std_tuple[0].lstrip('.\n..\n'))
                 counter += 1
         except subprocess.CalledProcessError:
             pass 
