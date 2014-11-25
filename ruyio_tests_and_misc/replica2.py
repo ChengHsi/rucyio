@@ -16,10 +16,14 @@ with open(argv_file, 'r') as dids:
     for did in dids:
         did = did.rstrip('\n')
         print did
-        did_list = did.split(':')
-        scope = did_list[0]
-        filename = did_list[1]
-        rse_name = 'TW-EOS01_AMS02DATADISK'
+        if ':' in did:
+            did_list = did.split(':')
+            scope = did_list[0]
+            filename = did_list[1]
+        else:
+            filename = did
+            scope = 'ams-user-testuser1'
+        rse_name = 'TW-EOS00_AMS02DATADISK'
         adler32 = ''
         md5 = ''
         bytes = 0
