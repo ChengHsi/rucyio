@@ -11,14 +11,20 @@ import subprocess, shlex, os, sys
 def eos_ls_recur(abs_path):
     '''
     this function mimics eos ls -r 
-    ''' 
-    dir_list = [line.rstrip() for line in open(os.getcwd() + '/hash_dir_name')]
-    counter = 0
+    '''
+    # import pdb; pdb.set_trace()
+    cwd = os.getcwd() 
+    if 'pass4' in cwd:
+        wd = cwd
+    elif 'rucyio' in cwd:
+        wd = cwd + '/pass4'
+    dir_list = [line.rstrip() for line in open(wd + '/hash_dir_name')]
+    # counter = 0
     # for target_dir in dir_list:
     #   for target_dir2 in dir_list:
           
     for target_dir, target_dir2 in [(x,y) for x in dir_list for y in dir_list]:
-        cmd = 'eos ls -a %s%s/%s' %(abs_path, target_dir, target_dir2)
+        cmd = 'eos ls -al %s%s/%s' %(abs_path, target_dir, target_dir2)
     #import itertools
     #for target_dir in itertools.product(dir_list, repeat=2):
     #    cmd = 'eos ls -a %s%s/%s' %(abs_path, str(target_dir[0]), str(target_dir[1]))
@@ -27,8 +33,9 @@ def eos_ls_recur(abs_path):
         # sub = subprocess.check_call(shlex.split(cmd), stderr=subprocess.STDOUT) #, stdout=subprocess.PIPE) #, stderr=None)
         try:
             # sub = subprocess.check_call(shlex.split(cmd2), stderr=subprocess.STDOUT, stdout=subprocess.PIPE) #, stderr=None)
+            print target_dir, target_dir2
             sub = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            std_tuple = sub.communicate()
+            std_tuple = list(sub.communicate())
             # print str(std_tuple[1])
             # check_all with try except will spit out all the eos ls including errors, so I will stick with Popen
             # and raise my own CalledProcessError
@@ -36,25 +43,28 @@ def eos_ls_recur(abs_path):
                 # raise subprocess.CalledProcessError(cmd='args', output='')
                 raise subprocess.CalledProcessError(cmd, '') 
             else:
-                print abs_path + target_dir + '/' + target_dir2 + ':'
+                file_dir = abs_path + target_dir + '/' + target_dir2 + ':\n'
+                # std_tuple = std_tuple.split('\n')
                 # print abs_path + str(target_dir[0]) + '/' + str(target_dir[1]) + ':'
-                print std_tuple[0].lstrip('.\n..\n')
-                if sys.argv[1] = None:
-                    f_write = open('tw_eos02_result', 'a')
-                    f_write.write(std_tuple[0].lstrip('.\n..\n'))
+                file_list = [x for x in std_tuple[0].split('\n') if x.endswith('.root')]
+                print file_dir, file_list
+                if sys.argv[1] == None:
+                    f_write == open(wd + '/tw_eos02_result', 'a')
+                    f_write.write(file_dir)
+                    f_write.write(str(file_list))
                 else:
-                # return std_tuple[0].lstrip('.\n..\n')
-                    f_write = open(sys.argv[1], 'a')
-                    f_write.write(std_tuple[0].lstrip('.\n..\n'))
-                counter += 1
+                    f_write = open(wd + '/' + sys.argv[1], 'a')
+                    f_write.write(file_dir)
+                    f_write.write(str(file_list)+'\n')
+                # counter += 1
         except subprocess.CalledProcessError:
             pass 
         except KeyboardInterrupt:
             sys.exit()
         except:
             print 'Unknown Error', sys.exc_info()
-        if counter == 10:
-            sys.exit()
+        # if counter == 10:
+        #     sys.exit()
         # break
     # break
     

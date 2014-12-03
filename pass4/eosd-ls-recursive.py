@@ -71,15 +71,15 @@ def eos_ls_recur2():
         print x[0] + '/' + x[1]
 
 def read_raw_ls_r_and_output_lines_of_file():
-    f_write = open('/root/chchao/rucyio/pass4/tw-eos02-ls-result_01', 'w+') 
-    with open('/root/chchao/rucyio/pass4/tw-eos02-ls-result', 'r') as lines:
+    f_write = open('/root/chchao/rucyio/pass4/tw-eos01-ls-result_01', 'w+') 
+    with open('/root/chchao/rucyio/pass4/tw-eos01-ls-result', 'r') as lines:
         for line in lines:
-            if '-rw-rw-r--' in line:
+            if '-rw-r--r--' in line:
                 f_write.write(line)
                 print line.rstrip('\n')
 
 if __name__ == '__main__':
     # abs_path = '/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/'
-    read_flat_list_and_output_root_lines()
+    read_raw_ls_r_and_output_lines_of_file() 
     # eos_ls_recur(abs_path)
     # write(abs_path)
