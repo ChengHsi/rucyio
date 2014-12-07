@@ -6,7 +6,7 @@ AMS02 - Paramigrator
 parellel version of ams02-migrator
 read from filelist
 xrdcp to destination
-at the start of each run, the finished_filelist and the existed_filelist should be consistent, not exactly the same, but at least same wc -l
+at the start of each run, the finished_filelist and the exist_filelist should be consistent, not exactly the same, but at least same wc -l
 """
 
 #
@@ -48,7 +48,7 @@ def read(file):
 def xrdcp(line):
     """
     """
-    cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos01.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
+    cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos03.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
     try:
         # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
         # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
@@ -63,6 +63,7 @@ def xrdcp(line):
         write('finished_filelist', line)
     except subprocess.CalledProcessError:
         # In the case of duplicate file
+        # TODO: this is not exactly a well defined catching, to general
         write('exist_filelist', line)
 
 
@@ -140,9 +141,9 @@ def do_work(in_queue, out_list):
             return
 
         # work
-        exist = write_dir + 'exist_filelist'
-        with open(exist, 'r') as exist:
-            if line not in exist:
+        finished = write_dir + 'finished_filelist'
+        with open(finished, 'r') as finished:
+            if line not in finished:
                 xrdcp(line)
         # TODO: the out_list part is unessary
         out_list.append(line)
@@ -172,4 +173,5 @@ if __name__ == "__main__":
     # TODO: get rid of this part
     # get the results
     # example:  [(1, "foo"), (10, "bar"), (0, "start")]
-    print sorted(results)
+    # print sorted(results)
+    print 'finished'
