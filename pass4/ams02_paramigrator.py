@@ -12,10 +12,22 @@ at the start of each run, the finished_filelist and the exist_filelist should be
 #
 # Code goes here.
 #
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, Pool
 import itertools
-import sys, os, hashlib, subprocess, shlex, signal, datetime, time, errno
+import sys
+import os
+import hashlib
+import subprocess
+import shlex
+import signal
+import datetime
+import errno
+import time
 import mmap
+from blessings import Terminal
+
+
+term = Terminal()
 # print os.getcwd()
 file = str(sys.argv[1])
 # print os.chdir(file1)
@@ -48,11 +60,15 @@ def read(file):
 def xrdcp(line):
     """
     """
-    cmd = 'xrdcp root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s root://tw-eos03.grid.sinica.edu.tw/%s' % (line.rstrip(), hash(scope, line))
+    ori_path = 'root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s' % line.rstrip()
+    dest_path = 'root://tw-eos02.grid.sinica.edu.tw/%s' % (hash(scope, line))
+    # cmd1 = '/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select cp --checksum ori_path dest_path'
+    cmd1 = 'xrdcp %s %s' % (ori_path, dest_path)
+    print cmd1
     try:
         # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
         # sub = subprocess.check_call(shlex.split(cmd), stdout=None, stderr=None)
-        subprocess.check_call(shlex.split(cmd))
+        subprocess.check_call(shlex.split(cmd1))
         print '\n %s finished. \n' % (line.rstrip())
         # sub = subprocess.check_output(shlex.split(cmd), stderr=subprocess.STDOUT)
         # while sub.poll() is None:
@@ -64,7 +80,11 @@ def xrdcp(line):
     except subprocess.CalledProcessError:
         # In the case of duplicate file
         # TODO: this is not exactly a well defined catching, to general
-        write('exist_filelist', line)
+        cmd2 = '/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select fileinfo %s --checksum' % ori_path
+        subprocess.Popen(cmd2)
+        cmd3 = '/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select fileinfo %s --checksum' % dest_path
+        subprocess.Popen(cmd3)
+        # write('exist_filelist', line)
 
 
 def write(filepath, message):
@@ -149,6 +169,34 @@ def do_work(in_queue, out_list):
         out_list.append(line)
 
 
+class Writer(object):
+    """Create an object with a write method that writes to a
+    specific place on the screen, defined at instantiation.
+
+    This is the glue between blessings and progressbar.
+    """
+    def __init__(self, location):
+        """
+        Input: location - tuple of ints (x, y), the position
+                          of the bar in the terminal
+        """
+        self.location = location
+
+    def write(self, string):
+        with term.location(*self.location):
+            print(string)
+
+
+def test(pool, location):
+    """Test with a single bar.
+
+    Input: location - tuple (x, y) defining the position on the
+                      screen of the progress bar
+    """
+    # fd is an object that has a .write() method
+    writer = Writer(location)
+    # pool.apply_async(do_work, (work, results))
+
 if __name__ == "__main__":
     manager = Manager()
     results = manager.list()
@@ -156,19 +204,26 @@ if __name__ == "__main__":
 
     # start for workers
     pool = []
+    # pool = Pool()
+    # pool = Pool(processes=num_workers)
+    # locations = [(0, i) for i in range(0, num_workers)]
+    # pool.map(test, (pool,locations))
+    # pool.close()
     for i in xrange(num_workers):
+        # x_param = (i) * 100
+        # with term.location(10, x_param):
         p = Process(target=do_work, args=(work, results))
         p.start()
         pool.append(p)
-
+    # workers = pool.apply_async(do_work, (work, results))
     # produce data
     with open(file) as f:
         iters = itertools.chain(f, (None,) * num_workers)
         for num_and_line in enumerate(iters):
             work.put(num_and_line)
 
-    for p in pool:
-        p.join()
+    # for p in pool:
+    #    p.join()
 
     # TODO: get rid of this part
     # get the results
