@@ -8,78 +8,72 @@ with eosd enabled
 """
 import subprocess, shlex, os, sys
 
-
-def eos_ls_recur(abs_path):
-    '''
-    this function mimics eos ls -r 
-    ''' 
-    dir_list = [line.rstrip() for line in open(os.getcwd() + '/hash_dir_name')]
-    counter = 0
-    # for target_dir in dir_list:
-    #   for target_dir2 in dir_list:
-          
-    for target_dir, target_dir2 in [(x,y) for x in dir_list for y in dir_list]:
-        cmd = 'ls -a %s%s/%s' %(abs_path, target_dir, target_dir2)
-        try:
-            sub = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            std_tuple = sub.communicate()
-            # print str(std_tuple[1])
-            # check_all with try except will spit out all the eos ls including errors, so I will stick with Popen
-            # and raise my own CalledProcessError
-            if str(std_tuple[1]) != '':
-                # raise subprocess.CalledProcessError(cmd='args', output='')
-                raise subprocess.CalledProcessError(cmd, '') 
-            else:
-                print abs_path + target_dir + '/' + target_dir2 + ':'
-                # print abs_path + str(target_dir[0]) + '/' + str(target_dir[1]) + ':'
-                print std_tuple[0].lstrip('.\n..\n')
-                # if sys.argv[1] = None:
-                #     f_write = open('tw_eos02_result', 'a')
-                #     f_write.write(std_tuple[0].lstrip('.\n..\n'))
-                # else:
-                # return std_tuple[0].lstrip('.\n..\n')
-                f_write = open(sys.argv[1], 'a')
-                f_write.write(std_tuple[0].lstrip('.\n..\n'))
-                counter += 1
-        except subprocess.CalledProcessError:
-            pass 
-        except KeyboardInterrupt:
-            sys.exit()
-        except:
-            print 'Unknown Error', sys.exc_info()
-        if counter == 10:
-            sys.exit()
-        # break
-    # break
-    
-     
-        # if stderr_data == 'None':
-        # f_write.write(std_tuple[0])
-        # print std_tuple[0]
-
-def eos_ls_recur2():
-    '''
-    this function mimics eos ls -r
-    '''
-    dir_list = [line.rstrip() for line in open(os.getcwd() + '/hash_dir_name')]
-    # for x, y in map(None, dir_list, dir_list):
-    #    print x, y
-    # for x, y in [(x,y) for x in dir_list for y in dir_list]:
-    #    print x, y
-    import itertools
-    for x in  itertools.product(dir_list, repeat=2):
-        print x[0] + '/' + x[1]
-
 def read_raw_ls_r_and_output_lines_of_file():
-    f_write = open('/root/chchao/rucyio/pass4/tw-eos02-ls-result_01', 'w+') 
-    with open('/root/chchao/rucyio/pass4/tw-eos02-ls-result', 'r') as lines:
-        for line in lines:
-            if '-rw-rw-r--' in line:
-                f_write.write(line)
-                print line.rstrip('\n')
+    with open('/root/chchao/rucyio/pass4/tw-eos01-ls-result_01', 'w+') as f_write:
+        with open('/root/chchao/rucyio/pass4/tw-eos01-ls-result_00', 'r') as lines:
+            for line in lines:
+                if '-rw-r--r--' in line:
+                    f_write.write(line)
+                    print line.rstrip('\n')
+
+def raw2set(filepath):
+    with open(filepath) as raw:
+        raw_list = []
+        if 'result_01' in filepath:
+            '''result_01 are rawlists of files directly from a eosd ll -R'''
+            for line in raw:
+                try:
+                    file_spec = line.rstrip().split()
+                    file_spec_dict = {'size':int(file_spec[4]), 'name':file_spec[8]}
+                    if file_spec_dict['size'] > 0:
+                        raw_list.append(file_spec_dict['name'])
+                except ValueError:
+                    print line
+        elif 'result_00' in filepath:
+            '''result_00 are lines with files and directory from ll -R'''
+            # for line in raw:
+            #    raw_list.append(line)
+            raise Expection('Not implemented!')
+        else:
+            for line in raw:
+                raw_list.append(line.rstrip())
+        result = set(raw_list)
+        print 'There are ' + str(len(result)) +' files in ' + filepath
+        return result
+
+
+def set_intersect(filepath_list):
+    result_set = set()
+    for file in filepath_list:
+        result_set = result_set | raw2set(file)
+    return result_set
+
+def get_filepath_list(se_list):
+    result = []
+    for se in se_list:
+        path_01 = pass4_dir + '/' + se + '-ls-result_01'
+        result.append(path_01)
+    return result
+
+def sets_diff(ori_set, new_set):
+    result  = ori_set - new_set
+    print 'There are ' + str(len(result)) +' file differntials'
+    import datetime
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+    with open(pass4_dir + '/missing_on_se_' + timestamp, 'w+') as f_write:
+        for file in result:
+            f_write.write(file)
+            f_write.write('\n')
+
 
 if __name__ == '__main__':
-    # abs_path = '/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/'
-    read_flat_list_and_output_root_lines()
-    # eos_ls_recur(abs_path)
-    # write(abs_path)
+    current_dir = os.getcwd()
+    if 'pass4' not in current_dir:
+        pass4_dir = current_dir + '/pass4'
+    else:
+        pass4_dir = current_dir
+    ori_path = pass4_dir + '/pass4-filelist_all'
+    # read_raw_ls_r_and_output_lines_of_file()
+    ori_set = raw2set(ori_path)
+    new_set = set_intersect(get_filepath_list(['tw-eos01', 'tw-eos02', 'tw-eos03']))
+    sets_diff(ori_set, new_set)
