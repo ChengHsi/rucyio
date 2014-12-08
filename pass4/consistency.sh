@@ -1,11 +1,12 @@
 #!/bin/bash
+echo "files not in $2"
 while read p
 do
-    a=`grep -rnw "tw-eos03-ls-result_adler" -e "$p"`
+    a=`grep -rnw "$2" -e "$p"`
     if [ "$a" == "" ]
     then
         echo $p
     fi
 
 
-done <venn_diagram/e_1
+done <$1
