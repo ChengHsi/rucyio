@@ -8,98 +8,36 @@ with eosd enabled
 """
 import subprocess, shlex, os, sys
 
-def file_only_eosd_ls_r():
-    '''
-    Filter lines of file from ls -R result when using eosd service.
 
-    Raw result with subdirectories is assummed to be named *result_00,
-    and se-ls-result_01 would be written.
+def eos_find2dict(filepath1):
     '''
-    with open('/root/chchao/rucyio/pass4/tw-eos01-ls-result_01', 'w+') as f_write:
-        with open('/root/chchao/rucyio/pass4/tw-eos01-ls-result_00', 'r') as lines:
-            for line in lines:
-                if '-rw-r--r--' in line:
-                    f_write.write(line)
-                    print line.rstrip('\n')
+    Recieve results from eos find -f --size --checksumand returns JSON-like dictionary of files and its attributes.
 
-
-def join_by_common(filepath1, filepath2):
+    An example line from eos find -f --size --checksum:
+    path=/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/00/2c/1376848948.00000001.root size=6334587289 checksum=b9816528
     '''
-    Merge results from eos ls -l and eos find by common identifier filename.
-
-    An example line from eos ls -l:
-    -rw-rw-r-- 1 twgridpil twgridpil 6334587289 Nov 14 21:04 1376848948.00000001.root
-    An example line from eos find -f --checksum:
-    path=/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/02/05/1370420623.0000000
-    1.root checksum=cd61aeb0
-    '''
-    result_list = []
-    result_list2 = []
+    result_dict = {}
     with open(filepath1) as f1:
-        with open(filepath2) as f2:
-            if ('result_01' in filepath1 and 'result_adler' in filepath2):
-	            eos_ls = f1
-	            eos_find = f2
-            elif ('result_adler' in filepath1) and ('result_01' in filepath2):
-	            eos_ls = f2
-	            eos_find = f1
-            else:
-	            raise Exception('this should not happen!')
-            for line in eos_ls:
-                try:
-                    file_spec = line.rstrip().split()
-                    file_spec_dict = {'size':int(file_spec[4]), 'name':file_spec[8]}
-                    if file_spec_dict['size'] > 0:
-                        # result_list.append({file_spec_dict['name']:file_spec_dict})
-                        result_list.append(file_spec_dict)
-                except ValueError:
-                    print 'Value error on', line
-                    raise ValueError
-            result_list = sorted(result_list, key = lambda k: k['name'])
-
-            import re
-            for line in eos_find:
-                try:
-                    file_spec = line.rstrip()
-                    file_spec = re.split('=|\s', file_spec)
-                    file_spec_dict = {}
-                    file_spec_dict = {'name':file_spec[1].split('/')[-1:][0], 'path':file_spec[1], 'checksum':file_spec[3]}
-                    result_list2.append(file_spec_dict)
-                except:
-                    raise Exception('Not implemented')
-            result_list2 = sorted(result_list2, key = lambda k: k['name'])
-            for i in result_list:
-                for j in result_list2:
-                    if j['name'] == i['name']:
-                        i['path'] = j['path']
-                        i['checksum'] = j['checksum']
-                        break
-            return result_list
+        import re
+        if 'result_cs' in filepath1:
+            for line in f1:
+                file_spec = line.rstrip()
+                file_spec = re.split('=|\s', file_spec)
+                filename = file_spec[1].split('/')[-1:][0]
+                result_dict[filename] = {'size':file_spec[3], 'name':filename, 'path':file_spec[1],
+                        'adler32':file_spec[5]}
+            return result_dict
+        else:
+            raise Exception('this function currently requires *result_cs files a inout!')
 
 def file2set(filepath, attr='name'):
     '''
     Return a set from one column(attr) of a file.
     '''
+    raw_list = []
     with open(filepath) as raw:
-        raw_list = []
-        if 'result_01' in filepath:
-            '''result_01 are rawlists of files directly from a eosd ll -R'''
-            for line in raw:
-                try:
-                    file_spec = line.rstrip().split()
-                    file_spec_dict = {'size':int(file_spec[4]), 'name':file_spec[8]}
-                    if file_spec_dict['size'] > 0:
-                        raw_list.append(file_spec_dict['name'])
-                except ValueError:
-                    print line
-        elif 'result_00' in filepath:
-            '''result_00 are lines with files and directory from ll -R'''
-            # for line in raw:
-            #    raw_list.append(line)
-            raise Expection('Not implemented!')
-        else:
-            for line in raw:
-                raw_list.append(line.rstrip())
+        for line in raw:
+            raw_list.append(line.rstrip())
         result = set(raw_list)
         print 'There are ' + str(len(result)) +' files in ' + filepath
         return result
@@ -108,31 +46,48 @@ def dict_list2set(result_list, attr='name'):
     '''
     Return a set from one attribute of a list of dictionaries.
     '''
+    result = set()
     for items in result_list:
-        result = set()
         result.add(items[attr])
-        print 'There are ' + str(len(result)) +' files in the list'
-        return result
+    return result
 
-# def set_intersect(filepath_list):
-#     result_set = set()
-#     for file in filepath_list:
-#         result_set = result_set | file2set(file)
-#     return result_set
+def dict2set(target_dict):
+    '''
+    Return a set from keys of dictionaries.
+    '''
+    result = set()
+    for key in target_dict.keys():
+        result.add(key)
+    print 'There are ' + str(len(result)) +' files in the set'
+    return result
+
+def set_intersect(filepath_list):
+    result_set = set()
+    for file in filepath_list:
+        result_set = result_set | dict2set(eos_find2dict(file))
+    return result_set
 
 def get_filepath_list(se_list):
+    '''
+    From a list of SEs names return the list of its filepath.
+    '''
     result = []
     for se in se_list:
-        path_01 = pass4_dir + '/' + se + '-ls-result_01'
+        path_01 = pass4_dir + '/' + se + '-ls-result_cs'
         result.append(path_01)
     return result
 
 def sets_diff(ori_set, new_set):
+    import pdb;pdb.set_trace()
+    print 'There are ' + str(len(ori_set)) +' file in ori_set'
+    print 'There are ' + str(len(new_set)) +' file in new_set'
     result  = ori_set - new_set
-    print 'There are ' + str(len(result)) +' file differntials'
     import datetime
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-    with open(pass4_dir + '/missing_on_se_' + timestamp, 'w+') as f_write:
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M')
+    print 'There are ' + str(len(result)) +' file differntials'
+    write_f = pass4_dir + '/MISSING_' + timestamp
+    print 'Write to:', write_f
+    with open(write_f, 'w+') as f_write:
         for file in result:
             f_write.write(file)
             f_write.write('\n')
@@ -146,6 +101,4 @@ if __name__ == '__main__':
     else:
         pass4_dir = current_dir
     ori_path = pass4_dir + '/pass4-filelist_all'
-    ## file_only_eosd_ls_r()
-    # sets_diff(ori_set=file2set(ori_path), new_set=set_intersect(get_filepath_list(['tw-eos01', 'tw-eos02', 'tw-eos03'])))
-    print join_by_common(pass4_dir+'/'+'tw-eos03-ls-result_adler', pass4_dir+'/'+'tw-eos03-ls-result_01')
+    sets_diff(ori_set=file2set(ori_path), new_set=set_intersect(get_filepath_list(['tw-eos01', 'tw-eos02', 'tw-eos03'])))
