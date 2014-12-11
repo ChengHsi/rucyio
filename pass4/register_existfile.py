@@ -3,14 +3,13 @@ Register Exist Files
 
 Take a list of dictionaries of files that exist on SE,
 add to Rucio DB.
-Should be a taking a list of JSON files instead?
+Should be taking a list of JSON files instead?
 """
 
 from rucio.common.utils import generate_uuid
-####from client####
 from rucio.client.replicaclient import ReplicaClient
 repCli = ReplicaClient()
-import sys, datetime
+import sys
 from rucio.client.didclient import DIDClient
 didCli = DIDClient()
 from rucio.client.ruleclient import RuleClient
@@ -19,63 +18,50 @@ from rucio.client.rseclient import RSEClient
 rseCli = RSEClient()
 from rucio.common import exception
 
+
 argv_file = str(sys.argv[1])
-with open(argv_file, 'r') as dids:
-    for did in dids:
-        did = did.rstrip('\n')
-        did_list = did.split(' ')
-        if ':' in did[0]:
-            scope = did_list[0][0]
-            filename = did_list[0][1]
-        else:
-            filename = unicode(did_list[0])
-            scope = 'ams-user-testuser1'
-        # rse_name = 'TW-EOS00_AMS02DATADISK'
-        rse_name = 'AMS-EOS00_AMS02DATADISK'
-        prefix = '/eos/ams/amsdatadisk/'
-        adler32 = did_list[1]
-        bytes = int(did_list[2])
-        md5 = unicode(did_list[3])
-        pfn = prefix + scope + '/' + filename
-        ##for files already with replicas:
-        #for x in repCli.list_replicas([{'scope': scope, 'name': filename}]):
-        #    adler32 = x['adler32']
-        #    md5 = x['md5']
-        #    bytes = x['bytes']
-        ##    print x
-        # file_meta = didCli.get_metadata(scope, filename)
-        file_meta = {}
-        # file_meta =  didCli.get_metadata(test_did.split(':')[0], test_did.split(':')[1])
-        file_meta['adler32'] = adler32
-        file_meta['scope'] = scope
-        file_meta['name'] = filename
-        file_meta['bytes'] = bytes
-        file_meta['md5'] = md5
-        file_meta['guid'] = str(generate_uuid())
-        #repCli.delete_replicas(rse_name, [{'scope': scope, 'name': filename}])
+scope = 'ams-2011B-ISS.B620-pass4'
+prefix = '/eos/ams/amsdatadisk/'
+if 'tw-eos01' in sys.argv[1]:
+    rse_name = 'TW-EOS01_AMS02DATADISK'
+elif 'tw-eos02' in sys.argv[1]:
+    rse_name = 'TW-EOS02_AMS02DATADISK'
+elif 'tw-eos03' in sys.argv[1]:
+    rse_name = 'TW-EOS03_AMS02DATADISK'
+did_dict = eos_find2dict(argv_file)
+for did in did_dict:
+    # md5 = unicode(did_list[3])
+    # pfn = prefix + scope + '/' + filename
+    adler32 = did_dict[did]['adler32']
+    filename =did_dict[did]['name']
+    bytes = int(did_dict[did]['size'])
+    # did['md5'] = None
+    # did_dict[did]['guid'] = str(generate_uuid())
 
+    try:
+        repCli.add_replica(rse_name, scope, filename, bytes, adler32)
+        print 'Replica for %s added' %filename
+        ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1,
+                                     rse_expression=rse_name, grouping='DATASET')
+        print 'Rule for %s added' %filename
+    except exception.Duplicate:
+        print 'Already replicated for %s, but try adding rules' %filename
+        rules = didCli.list_did_rules(scope=scope, name=filename)
+        # rules = didCli.list_associated_rules_for_file(scope=scope, name=filename)
         try:
-            repCli.add_replica(rse_name, scope, filename, bytes, adler32,pfn, md5, file_meta)
-        except exception.Duplicate:
-            print 'already replicated, but adding rules'
-            ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1, \
-            rse_expression=rse_name, grouping='DATASET')
-            continue
-        ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1, \
-        rse_expression=rse_name, grouping='DATASET')
-
-        print 'after add:'
-        for x in repCli.list_replicas([{'scope': scope, 'name': filename}]):
-            print x
-###################################################
-#for x in rseCli.list_rses('TW-EOS01_AMS02DATADISK'):
-#    print x
-#rseCli.delete_rse(rse_name)
-#print rseCli.get_rse(rse_name)
-#for x in rseCli.list_rses():
-#    print x
-#rseCli.delete_protocols(rse_name, 'xrootd')
-#print rseCli.list_rse_attributes(rse_name)
-#print rseCli.get_protocols(rse_name)
-#from rucio.api.rse import del_rse, get_rse, get_protocols
-#del_rse(rse_name, 'root')
+             # first_item = rules.next()
+             no_rules4_RSE = True
+             for x in rules:
+                 if x['rse_expression'] == rse_name:
+                     no_rules4_RSE = False
+                     print 'Already has a rule for the RSE.'
+                     break 
+                 else:
+                     continue
+             if no_rules4_RSE:
+                 print 'Has no rules or rules for other RSE, adding rules'
+                 ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1,
+                                              rse_expression=rse_name, grouping='DATASET')
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            raise

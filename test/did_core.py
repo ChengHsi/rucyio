@@ -7,7 +7,7 @@ dc = DIDClient()
 from rucio.api.did import get_did
 import pdb;pdb.set_trace()
 print get_did('ams-user-chenghsi', 'd2')
-print dc.non_attached('ams-user-chenghsi')
+# print dc.non_attached('ams-user-chenghsi')
 # @stream_session
 @read_session
 def non_attached(scope, session=None):
@@ -33,7 +33,7 @@ def non_attached(scope, session=None):
     except:
         raise
 # non_attached('ams-user-chenghsi','d1')
-# non_attached('ams-user-chenghsi')
+print non_attached('ams-user-chenghsi')
 
 @read_session
 def get_did(scope, name, session=None):
