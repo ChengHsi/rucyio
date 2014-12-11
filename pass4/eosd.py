@@ -89,13 +89,21 @@ def sets_diff(ori_set, new_set):
     print 'There are ' + str(len(ori_set)) + ' file in ori_set'
     print 'There are ' + str(len(new_set)) + ' file in new_set'
     result = ori_set - new_set
+    result2 = new_set - ori_set
     import datetime
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M')
-    print 'There are ' + str(len(result)) + ' file differntials'
-    write_f = pass4_dir + '/MISSING_' + timestamp
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
+    print 'There are ' + str(len(result)) + ' files from ori - new '
+    print 'There are ' + str(len(result2)) + ' files from new - ori '
+    write_f = pass4_dir + '/MISSING_' + timestamp + '_from_new'
+    write_f2 = pass4_dir + '/MISSING_' + timestamp + '_frpm_ori'
     print 'Write to:', write_f
     with open(write_f, 'w+') as f_write:
         for file in result:
+            f_write.write(file)
+            f_write.write('\n')
+    print 'Write to:', write_f2
+    with open(write_f2, 'w+') as f_write:
+        for file in result2:
             f_write.write(file)
             f_write.write('\n')
 
