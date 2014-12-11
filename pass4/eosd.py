@@ -16,7 +16,6 @@ def eos_find2dict(filepath1):
     [root@tw-eos02 pass4]# eos find -f --checksum --size /eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/ >> tw-eos02-ls-result_cs
     An example line from eos find -f --size --checksum:
     path=/eos/ams/amsdatadisk/ams-2011B-ISS/B620-pass4/00/2c/1376848948.00000001.root size=6334587289 checksum=b9816528
-
     An example of output would be:
     {'1305955357.00733835.root': {'adler32': '00000000', 'name': '1305955357.00733835.root', 'path': '/eos/ams/ams...00733835.root', 'size': '0'}}
     '''
@@ -87,9 +86,9 @@ def get_filepath_list(se_list):
 
 
 def sets_diff(ori_set, new_set):
-    print 'There are ' + str(len(ori_set)) +' file in ori_set'
-    print 'There are ' + str(len(new_set)) +' file in new_set'
-    result  = ori_set - new_set
+    print 'There are ' + str(len(ori_set)) + ' file in ori_set'
+    print 'There are ' + str(len(new_set)) + ' file in new_set'
+    result = ori_set - new_set
     import datetime
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M')
     print 'There are ' + str(len(result)) + ' file differntials'
