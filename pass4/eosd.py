@@ -95,7 +95,7 @@ def sets_diff(ori_set, new_set):
     print 'There are ' + str(len(result)) + ' files from ori - new '
     print 'There are ' + str(len(result2)) + ' files from new - ori '
     write_f = pass4_dir + '/MISSING_' + timestamp + '_from_new'
-    write_f2 = pass4_dir + '/MISSING_' + timestamp + '_frpm_ori'
+    write_f2 = pass4_dir + '/MISSING_' + timestamp + '_from_ori'
     print 'Write to:', write_f
     with open(write_f, 'w+') as f_write:
         for file in result:
