@@ -61,7 +61,7 @@ def xrdcp(line):
     """
     """
     ori_path = 'root://eosams.cern.ch//eos/ams/Data/AMS02/2011B/ISS.B620/pass4/%s' % line.rstrip()
-    dest_path = 'root://tw-eos02.grid.sinica.edu.tw/%s' % (hash(scope, line))
+    dest_path = 'root://tw-eos03.grid.sinica.edu.tw/%s' % (hash(scope, line))
     # cmd1 = '/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select cp --checksum ori_path dest_path'
     cmd1 = 'xrdcp %s %s' % (ori_path, dest_path)
     print cmd1
