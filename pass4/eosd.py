@@ -6,7 +6,8 @@ Eosd Utilities
 Some function when I need to recursive ls through a Eos directory
 with eosd enabled
 """
-import os, sys
+import os
+import sys
 
 
 def eos_find2dict(filepath1):
@@ -86,16 +87,21 @@ def get_filepath_list(se_list):
 
 
 def sets_diff(ori_set, new_set):
-    print 'There are ' + str(len(ori_set)) + ' file in ori_set'
-    print 'There are ' + str(len(new_set)) + ' file in new_set'
+    print 'There are ' + str(len(ori_set)) + ' files in orignal set'
+    print 'There are ' + str(len(new_set)) + ' files in new set'
     result = ori_set - new_set
     result2 = new_set - ori_set
+    return (result, result2)
+
+
+def write_result(ori_name, new_name, result_tuple):
+    result, result2 = result_tuple
     import datetime
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M')
-    print 'There are ' + str(len(result)) + ' files from ori - new '
-    print 'There are ' + str(len(result2)) + ' files from new - ori '
-    write_f = pass4_dir + '/MISSING_' + timestamp + '_from_new'
-    write_f2 = pass4_dir + '/MISSING_' + timestamp + '_frpm_ori'
+    print 'There are ' + str(len(result)) + ' files from ' + str(ori_name) + ' - ' + str(new_name)
+    print 'There are ' + str(len(result2)) + ' files from ' + str(new_name) + ' - ' + str(ori_name)
+    write_f = pass4_dir + '/MISSING_' + timestamp + '_' + ori_name + '_minus_' + new_name
+    write_f2 = pass4_dir + '/MISSING_' + timestamp + '_' + new_name + '_minus_' + ori_name
     print 'Write to:', write_f
     with open(write_f, 'w+') as f_write:
         for file in result:
@@ -110,9 +116,23 @@ def sets_diff(ori_set, new_set):
 
 if __name__ == '__main__':
     current_dir = os.getcwd()
+    try:
+        ori_name = sys.argv[1]
+    except IndexError:
+        ori_name = 'pass4-filelist_all'
     if 'pass4' not in current_dir:
+        if ori_name.startswith('pass4/'):
+            ori_name = ori_name.lstrip('pass4/')
         pass4_dir = current_dir + '/pass4'
+        ori_path = pass4_dir + '/' + ori_name
     else:
         pass4_dir = current_dir
-    ori_path = pass4_dir + '/pass4-filelist_all'
-    sets_diff(ori_set=file2set(ori_path), new_set=set_intersect(get_filepath_list(['tw-eos01', 'tw-eos02', 'tw-eos03'])))
+        ori_path = pass4_dir + '/' + ori_name
+    try:
+        new_name = sys.argv[2]
+        new_path = pass4_dir + '/' + new_name
+        result_tuple = sets_diff(ori_set=file2set(ori_path), new_set=file2set(new_path))
+    except IndexError:
+        new_name = 'SE'
+        result_tuple = sets_diff(ori_set=file2set(ori_path), new_set=set_intersect(get_filepath_list(['tw-eos01', 'tw-eos02', 'tw-eos03'])))
+    write_result(ori_name, new_name, result_tuple)

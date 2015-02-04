@@ -23,12 +23,15 @@ from eosd import eos_find2dict
 argv_file = str(sys.argv[1])
 scope = 'ams-2011B-ISS.B620-pass4'
 prefix = '/eos/ams/amsdatadisk/'
-if 'tw-eos01' in sys.argv[1]:
-    rse_name = 'TW-EOS01_AMS02DATADISK'
-elif 'tw-eos02' in sys.argv[1]:
-    rse_name = 'TW-EOS02_AMS02DATADISK'
-elif 'tw-eos03' in sys.argv[1]:
-    rse_name = 'TW-EOS03_AMS02DATADISK'
+try:
+    rse_name = str(sys.argv[2])
+except:
+    if 'tw-eos01' in sys.argv[1]:
+        rse_name = 'TW-EOS01_AMS02DATADISK'
+    elif 'tw-eos02' in sys.argv[1]:
+        rse_name = 'TW-EOS02_AMS02DATADISK'
+    elif 'tw-eos03' in sys.argv[1]:
+        rse_name = 'TW-EOS03_AMS02DATADISK'
 did_dict = eos_find2dict(argv_file)
 for did in did_dict:
     # md5 = unicode(did_list[3])
