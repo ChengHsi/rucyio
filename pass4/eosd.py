@@ -32,6 +32,15 @@ def eos_find2dict(filepath1):
             return result_dict
         else:
             raise Exception('this function currently requires *result_cs files a inout!')
+        if 'cern-protons-B620dev-all-filelist_cs' in filepath1:
+            for line in f1:
+                file_spec = line.rstrip()
+                file_spec = re.split('=|\s', file_spec)
+                filename = file_spec[1].split('/')[-1:][0]
+                result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
+            return result_dict
+        else:
+            raise Exception('this function currently requires *result_cs files a inout!')
 
 
 def file2set(filepath, attr='name'):
