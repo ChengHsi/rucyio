@@ -109,7 +109,8 @@ def xrdcp(line):
         write('CalledProcessError_filelist_' + file.split('/')[-1], line)
         pass
     except DestFileExist:
-        xrdfs(source_path, dest_path, line)
+        pass
+        # xrdfs(source_path, dest_path, line)
     except:
         print sys.exc_info()[0]
 
@@ -174,10 +175,10 @@ if __name__ == "__main__":
     except:
         destSE = 'tw-eos03'
 
-    source_prefix = 'root://eosams.cern.ch/'
+    source_prefix = 'root://hp-disk1.grid.sinica.edu.tw/'
     dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
-    dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
-    num_workers = 64
+    dest_dir = '/eos/ams/amsdatadisk/Data/ISS.B950R/pass6/nt/root/'
+    num_workers = 1 
 
     manager = Manager()
     results = manager.list()
