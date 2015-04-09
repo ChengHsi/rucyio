@@ -3,7 +3,7 @@ import sys
 import traceback
 from rucio.common.exception import Duplicate
 from rucio.client import Client
-rse_repo_file ='/opt/rucio/etc/rse_repository.json' 
+rse_repo_file ='/opt/rucio/etc/rse_repository.json'
 
 json_data = open(rse_repo_file)
 repo_data = json.load(json_data)
