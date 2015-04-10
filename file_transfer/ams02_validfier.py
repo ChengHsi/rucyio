@@ -74,8 +74,6 @@ def do_work(in_queue, out_list):
         if line is None:
             return
         compare_filelist(line)
-        # TODO: the out_list part is unessary
-        out_list.append(line)
 
 
 def parse_line(line):
@@ -98,11 +96,19 @@ def parse_line(line):
 
 
 def compare_filelist(line):
+    global counter
     compare_this_dict = parse_line(line)
-    for filename in compare_this_dict['filename']:
-        if filename in checksum_dict.keys():
-            if compare_this_dict['checksum'] != checksum_dict[filename]:
-                write('ChecksumError_filelist_' + file.split('/')[-1], line)
+    print 'Checking if %s in smaller file:' % (compare_this_dict['filename'])
+    filename = compare_this_dict['filename']
+    if filename in checksum_dict.keys():
+        print 'Yes'
+        if compare_this_dict['checksum'] != checksum_dict[filename]:
+            print 'Also it has a different checksum.'
+            write('ChecksumError_' + bigFile.split('/')[-1] + '_' + smallFile.split('/')[-1], line)
+            counter = counter + 1
+
+    else:
+        print 'No'
 
 
 def check_output(*popenargs, **kwargs):
@@ -146,19 +152,22 @@ class ChecksumError(Exception):
 
 
 if __name__ == "__main__":
+    counter = 0
     bigFile = str(sys.argv[1])
     smallFile = str(sys.argv[2])
     write_dir = '/'.join(bigFile.split('/')[:-1]) + '/result/'
+    print 'write_dir is:', write_dir
     checksum_dict = {}
     with open(smallFile, 'r') as small:
         for line in small:
-            parse_line(line)
-            checksum_dict[parse_line['filename']] = parse_line['checksum']
+            linedict = parse_line(line)
+            checksum_dict[linedict['filename']] = linedict['checksum']
+        # print checksum_dict['1313645806.00000001.root']
 
     # source_prefix = 'root://eosams.cern.ch/'
     # dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
     # dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
-    num_workers = 1
+    num_workers = 128
 
     manager = Manager()
     results = manager.list()
@@ -176,7 +185,6 @@ if __name__ == "__main__":
         iters = itertools.chain(f, (None,) * num_workers)
         for num_and_line in enumerate(iters):
             # num_and_line is a tuple, Ex: (0, '1383594243.00000001.root\n') or (0, 'path=/eos/ams/Data/AMS02/2014/ISS.B950/pass6/1385485339.00000001.root size=727225390 checksum=7cf8cccd'\n)
-            # pdb.set_trace()
             work.put(num_and_line)
 
-    print 'finished'
+    print 'Checksum Errors found:', counter
