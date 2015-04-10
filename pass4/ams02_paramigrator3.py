@@ -17,36 +17,13 @@ from multiprocessing import Process, Manager
 import itertools
 import sys
 import os
-import hashlib
+# import hashlib
 import subprocess
 import shlex
-import signal
+# import signal
 import datetime
 import errno
 import time
-
-
-def xrdcp(line):
-    """
-    """
-    ori_path = 'root://eosams.cern.ch//eos/ams/Data/AMS02/2014/ISS.B950/pass6/%s' % line.rstrip()
-    line_struct = line.split('/')
-    # print line[-1]
-    # ori_path = 'root://tw-eos01.grid.sinica.edu.tw/%s' % line.rstrip()
-    dest_path = 'root://%s.grid.sinica.edu.tw/%s' % (destSE, '/eos/ams/amsdatadisk/tw-eos01-pass4/'+line_struct[-1].rstrip())
-    # dest_path = 'root://%s.grid.sinica.edu.tw/%s' % (destSE, hash(scope, line, rse_prefix))
-    cmd1 = 'xrdcp %s %s' % (ori_path, dest_path)
-    print cmd1
-
-    try:
-        # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
-        subprocess.check_call(shlex.split(cmd1), stdout=None, stderr=None)
-        write('finished_filelist', line)
-    except subprocess.CalledProcessError:
-        pass
-    except:
-        print sys.exc_info()[0]
-        raise
 
 
 def write(filepath, message):
@@ -100,22 +77,90 @@ def do_work(in_queue, out_list):
         out_list.append(line)
 
 
+def xrdcp(line):
+    """
+    This line is a line from eos find -f --checksum --size [Original_path] >> [filelist]
+    It will look like:
+    'path=/eos/ams/Data/AMS02/2014/ISS.B950/pass6/1385485339.00000001.root size=727225390 checksum=7cf8cccd'
+    """
+    # Parse the line into respective attributes
+    file_dict = {}
+    for attr in line.split(' '):
+        # Add [path, size, checksum] as key to file_dict
+        file_dict[attr.split('=')[0]] = attr.split('=')[1]
+    file_dict['filename'] = file_dict['path'].split('/')[-1]
+    source_pfn = source_prefix + file_dict['path'].rstrip()
+    dest_pfn = dest_prefix + dest_dir + file_dict['filename'].rstrip()
+    cmd1 = 'xrdcp --cksum adler32:%s %s %s' % (file_dict['checksum'], source_pfn, dest_pfn)
+    # cmd1 = 'xrdcp --cksum adler32:%s %s %s -f' % ('ffffffff', source_pfn, dest_pfn)
+    print cmd1
+
+    try:
+        # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
+        # overwrite CalledProcessError due to `output` keyword might be not available
+        subprocess.CalledProcessError = CalledProcessError
+        subprocess.check_call(shlex.split(cmd1), stdout=None, stderr=None)
+        # sp = subprocess.Popen(shlex.split(cmd1), stdout=None, stderr=subprocess.PIPE).wait()
+        # write('finished_filelist_' + file.split('/')[-1], line)
+        # out, err = sp.communicate()
+        # print out
+        # if out:
+        #     print "standard output of subprocess:"
+        #     print out
+        #if err:
+        #     print "standard error of subprocess:"
+        #     print err
+        #     if 'File exists' in err:
+        #         raise DestFileExist('File already exist')
+        #     if '[ERROR] CheckSum error' in err:
+        #         raise ChecksumError('This is HUGE')
+
+        # print "returncode of subprocess:"
+        # print sp.returncode
+    except subprocess.CalledProcessError:
+        # Checksum, Exist
+        # print subprocess.PIPE
+        pass
+        # print 'CalledProcessError'
+    except DestFileExist:
+        print '%s already exists at %s' %(file_dict['filename'], dest_pfn)
+        pass
+    except ChecksumError:
+        write('error_filelist_' + file.split('/')[-1], line)
+        print 'ChecksumError'
+        pass
+    except:
+        print sys.exc_info()[0]
+
+class CalledProcessError(Exception):
+    def __init__(self, returncode, cmd, output=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        self.output = output
+    def __str__(self):
+        return "Command '%s' returned non-zero exit status %d with output of %s" % (
+            self.cmd, self.returncode, self.output)
+
+class DestFileExist(Exception):
+    pass
+
+class ChecksumError(Exception):
+    pass
+
 if __name__ == "__main__":
-    manager = Manager()
     file = str(sys.argv[1])
-    file_struct = file.split('/')
-    # split_input(file)
-    # scope = 'ams-2011B-ISS.B620-pass4'
-    rse_prefix = '/eos/ams/amsdatadisk/'
-    # scope = 'protons.B620dev'
-    current_line = None
-    write_dir = '/root/chchao/rucyio/pass4/result/'
-    num_workers = 128 
+    write_dir = '/'.join(file.split('/')[:-1]) + '/result/'
     try:
         destSE = str(sys.argv[2])
     except:
         destSE = 'tw-eos03'
 
+    source_prefix = 'root://eosams.cern.ch/'
+    dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
+    dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
+    num_workers = 64
+
+    manager = Manager()
     results = manager.list()
     work = manager.Queue(num_workers)
 
@@ -127,11 +172,11 @@ if __name__ == "__main__":
         pool.append(p)
     # produce data
     with open(file) as f:
+
         iters = itertools.chain(f, (None,) * num_workers)
         for num_and_line in enumerate(iters):
-            # num_and_line is a tuple
-            # Example:
-            # (0, '1383594243.00000001.root\n')
+            # num_and_line is a tuple, Ex: (0, '1383594243.00000001.root\n') or (0, 'path=/eos/ams/Data/AMS02/2014/ISS.B950/pass6/1385485339.00000001.root size=727225390 checksum=7cf8cccd'\n)
+            # import pdb; pdb.set_trace()
             work.put(num_and_line)
 
     print 'finished'

@@ -4,7 +4,8 @@ import subprocess
 import shlex
 import base64
 
-cmd = 'voms-proxy-init --voms ams02.cern.ch --vomses /afs/cern.ch/user/c/cchao2/rucyio/etc/vomses/ams02.cern.ch-voms.grid.sinica.edu.tw --vomsdir /afs/cern.ch/user/c/cchao2/rucyio/etc/grid-security/vomsdir/'
+# cmd = 'voms-proxy-init --voms ams02.cern.ch --vomses /afs/cern.ch/user/c/cchao2/rucyio/etc/vomses/ams02.cern.ch-voms.grid.sinica.edu.tw --vomsdir /afs/cern.ch/user/c/cchao2/rucyio/etc/grid-security/vomsdir/'
+cmd = 'voms-proxy-init --voms ams02.cern.ch:/ams02.cern.ch/Role=pilot --vomses /afs/cern.ch/user/c/cchao2/rucyio/etc/vomses/ams02.cern.ch-voms.grid.sinica.edu.tw --vomsdir /afs/cern.ch/user/c/cchao2/rucyio/etc/grid-security/vomsdir --valid 596522:59 --vomslife 596522:59'
 # cmd2 = 'kinit'
 sub = subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
 with open('/afs/cern.ch/user/c/cchao2/.ssh/p', 'r') as file1:

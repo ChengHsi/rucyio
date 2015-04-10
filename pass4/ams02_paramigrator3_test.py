@@ -25,6 +25,26 @@ import datetime
 import errno
 import time
 # import pdb
+from blessings import Terminal
+
+term = Terminal()
+
+
+class Writer(object):
+    """Create an object with a write method that writes to a
+    specific place on the screen, defined at instantiation.
+    This is the glue between blessings and progressbar.
+    """
+    def __init__(self, location):
+        """
+        Input: location - tuple of ints (x, y), the position
+                          of the bar in the terminal
+        """
+        self.location = location
+
+    def write(self, string):
+        with term.location(*self.location):
+            print(string)
 
 
 def write(filepath, message):
@@ -121,9 +141,12 @@ def xrdfs(s_path, d_path, line):
     cmd2 = 'xrdfs %s query checksum %s' % (dest_prefix, d_path)
     proc_2 = subprocess.Popen(shlex.split(cmd2), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output_2, err_2 = proc_2.communicate()
-    if output_1.split()[1] != output_2.split()[1]:
-        write('ChecksumError_filelist_' + file.split('/')[-1], line + ' dest_checksum=' + output_2.split()[1])
+    try:
+        if output_1.split()[1] != output_2.split()[1]:
+            write('ChecksumError_filelist_' + file.split('/')[-1], line + ' dest_checksum=' + output_2.split()[1])
         # raise ChecksumError
+    except:
+        write('xrdfsError_filelist_' + file.split('/')[-1], line)
 
 
 def check_output(*popenargs, **kwargs):
