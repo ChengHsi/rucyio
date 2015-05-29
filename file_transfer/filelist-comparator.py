@@ -33,7 +33,8 @@ def eos_find2dict(filepath):
                 file_spec = line.rstrip()
                 file_spec = re.split('=|\s', file_spec)
                 filename = file_spec[1].split('/')[-1:][0]
-                result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
+                result_dict[filename] = {'size': file_spec[3], 'name': filename, 'adler32': file_spec[5]}
+                # result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
             return result_dict
         except:
             raise Exception('This function requires the input file to be from eos find -f --size --checksum!')
@@ -154,9 +155,11 @@ if __name__ == '__main__':
         new_dict = eos_find2dict(new_path)
         result_tuple = sets_diff(ori_set=dict2set(ori_dict), new_set=dict2set(new_dict))
         for file in result_tuple[0]:
-            result1.append('path=%s size=%s checksum=%s' % (ori_dict[file]['path'], ori_dict[file]['size'], ori_dict[file]['adler32']))
+            # result1.append('size=%s checksum=%s' % (ori_dict[file]['size'], ori_dict[file]['adler32']))
+            result1.append('name=%s size=%s checksum=%s' % (ori_dict[file]['name'], ori_dict[file]['size'], ori_dict[file]['adler32']))
         for file in result_tuple[1]:
-            result2.append('path=%s size=%s checksum=%s' % (ori_dict[file]['path'], ori_dict[file]['size'], ori_dict[file]['adler32']))
+            result2.append('name=%s size=%s checksum=%s' % (new_dict[file]['name'], new_dict[file]['size'], new_dict[file]['adler32']))
+            # result2.append('size=%s checksum=%s' % (new_dict[file]['size'], new_dict[file]['adler32']))
         result_tuple = (result1, result2)
 
     # except IndexError:
