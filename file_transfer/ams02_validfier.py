@@ -107,8 +107,38 @@ def compare_filelist(line):
             write('ChecksumError_' + bigFile.split('/')[-1] + '_' + smallFile.split('/')[-1], line)
             counter = counter + 1
 
+<<<<<<< HEAD:pass4/ams02_paramigrator3_test.py
+    try:
+        # TODO: lack a parrelell stdout interface, maybe because i am using check_all instead of Popen? thought it is neccessary for getting the duplicate exception
+        subprocess.CalledProcessError = CalledProcessError
+        check_output(shlex.split(cmd1), stderr=None)
+    except ChecksumError:
+        write('ChecksumError_filelist_' + file.split('/')[-1], line)
+        pass
+    except subprocess.CalledProcessError:
+        write('CalledProcessError_filelist_' + file.split('/')[-1], line)
+        pass
+    except DestFileExist:
+        pass
+        # xrdfs(source_path, dest_path, line)
+    except:
+        print sys.exc_info()[0]
+
+
+def xrdfs(s_path, d_path, line):
+    cmd1 = 'xrdfs %s query checksum %s' % (source_prefix, s_path)
+    proc_1 = subprocess.Popen(shlex.split(cmd1), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output_1, err_1 = proc_1.communicate()
+    cmd2 = 'xrdfs %s query checksum %s' % (dest_prefix, d_path)
+    proc_2 = subprocess.Popen(shlex.split(cmd2), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output_2, err_2 = proc_2.communicate()
+    if output_1.split()[1] != output_2.split()[1]:
+        write('ChecksumError_filelist_' + file.split('/')[-1], line + ' dest_checksum=' + output_2.split()[1])
+        # raise ChecksumError
+=======
     else:
         print 'No'
+>>>>>>> d0d48cc12a4e09d321a718d2a6bd67036fec32e9:file_transfer/ams02_validfier.py
 
 
 def check_output(*popenargs, **kwargs):
@@ -152,6 +182,19 @@ class ChecksumError(Exception):
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD:pass4/ams02_paramigrator3_test.py
+    file = str(sys.argv[1])
+    write_dir = '/'.join(file.split('/')[:-1]) + '/result/'
+    try:
+        destSE = str(sys.argv[2])
+    except:
+        destSE = 'tw-eos03'
+
+    source_prefix = 'root://hp-disk1.grid.sinica.edu.tw/'
+    dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
+    dest_dir = '/eos/ams/amsdatadisk/Data/ISS.B950R/pass6/nt/root/'
+    num_workers = 1 
+=======
     counter = 0
     bigFile = str(sys.argv[1])
     smallFile = str(sys.argv[2])
@@ -168,6 +211,7 @@ if __name__ == "__main__":
     # dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
     # dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
     num_workers = 128
+>>>>>>> d0d48cc12a4e09d321a718d2a6bd67036fec32e9:file_transfer/ams02_validfier.py
 
     manager = Manager()
     results = manager.list()
