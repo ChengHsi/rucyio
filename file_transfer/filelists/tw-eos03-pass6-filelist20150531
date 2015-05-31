@@ -897,11 +897,6 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385586995.00000001.root size=4916
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385588365.00000001.root size=8133291159 checksum=82b32921
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385589780.00000001.root size=5078999410 checksum=3bcc6824
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385591151.00000001.root size=4602396328 checksum=03de5dac
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385593934.00000001.root size=0 checksum=00000000
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385595349.00000001.root size=0 checksum=00000000
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385596719.00000001.root size=0 checksum=00000000
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385598133.00000001.root size=0 checksum=00000000
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385599503.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385600918.00000001.root size=5467618001 checksum=9b2c10a1
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385602288.00000001.root size=4753903809 checksum=8b7bb514
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1385603702.00000001.root size=7507563133 checksum=ee0e9926
@@ -1455,7 +1450,6 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386365088.00000001.root size=4845
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386366502.00000001.root size=7218193987 checksum=e35b421b
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386367872.00000001.root size=5278087536 checksum=c4d31f59
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386369286.00000001.root size=6161008103 checksum=daa0a6ed
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386370656.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386372070.00000001.root size=7628208464 checksum=4e209241
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386373440.00000001.root size=5944185454 checksum=b0cff441
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1386374854.00000001.root size=7564003846 checksum=dc415a1d
@@ -2793,11 +2787,9 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388208708.00000001.root size=4981
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388210123.00000001.root size=3867885123 checksum=6ff72290
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388211492.00000001.root size=6155966339 checksum=c98ea1f4
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388212908.00000001.root size=4734405775 checksum=d878271e
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388214278.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388215692.00000001.root size=4159450405 checksum=4a56a835
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388217062.00000001.root size=7034532615 checksum=befe936e
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388218478.00000001.root size=4837271679 checksum=e8f7e3c8
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388219849.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388221262.00000001.root size=4703849051 checksum=22f1cb88
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388222632.00000001.root size=7880664480 checksum=5da3acd0
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1388224048.00000001.root size=4898463899 checksum=d5b32c4a
@@ -3762,13 +3754,10 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389553898.00000001.root size=6703
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389555314.00000001.root size=4622726312 checksum=76549449
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389556684.00000001.root size=6482757546 checksum=a638de5f
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389558098.00000001.root size=10106217461 checksum=700700f4
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389559468.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389560884.00000001.root size=4480940617 checksum=53a24a2a
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389562254.00000001.root size=5443590750 checksum=d8beb0ed
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389563668.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389565038.00000001.root size=6157974445 checksum=f0427b14
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389566454.00000001.root size=4649854851 checksum=9bfef278
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389567824.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389569238.00000001.root size=4079017722 checksum=fe9b0b0d
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389570608.00000001.root size=6045256065 checksum=0712a1fa
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1389572024.00000001.root size=4862615879 checksum=df282454
@@ -14095,7 +14084,6 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403920281.00000001.root size=1054
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403921651.00000001.root size=6593297570 checksum=3b679cfc
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403923067.00000001.root size=4327061409 checksum=fdded43d
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403924438.00000001.root size=5817721903 checksum=e3b610bf
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403925852.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403927221.00000001.root size=6335040173 checksum=06868e83
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403928637.00000001.root size=4384351176 checksum=ecb49a84
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403930007.00000001.root size=5026481055 checksum=437f2780
@@ -14111,7 +14099,6 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403942672.00000001.root size=4054
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403943931.00000001.root size=7610181003 checksum=3b1cfa12
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403945347.00000001.root size=4822289830 checksum=6cd597f6
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403946717.00000001.root size=4502815188 checksum=157f6684
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403948131.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403949501.00000001.root size=8002459932 checksum=6886a519
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403952287.00000001.root size=4613338642 checksum=bc68d4b6
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403953701.00000001.root size=5886545430 checksum=b9b420a4
@@ -14129,7 +14116,6 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403973197.00000001.root size=7661
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403977352.00000001.root size=6602249853 checksum=a295d7ef
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403978767.00000001.root size=7236186548 checksum=5e4fe770
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403980137.00000001.root size=5581206052 checksum=4c8d4233
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403981551.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403982921.00000001.root size=6732268193 checksum=24accdfb
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403984468.00000001.root size=6303108804 checksum=74132321
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403985707.00000001.root size=6180173571 checksum=bb6867de
@@ -14137,17 +14123,14 @@ path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403987121.00000001.root size=7035
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403988492.00000001.root size=7316341256 checksum=3e841727
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403991277.00000001.root size=6929242392 checksum=3a5f8d0d
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403992691.00000001.root size=6989045037 checksum=7bf9776e
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403994061.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403996848.00000001.root size=7473808657 checksum=3d198646
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403998261.00000001.root size=10639893727 checksum=6a4a3a06
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1403999631.00000001.root size=7131681667 checksum=8201088c
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404001047.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404002417.00000001.root size=7204070960 checksum=085b4c32
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404003831.00000001.root size=11287305080 checksum=3d43d7eb
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404005201.00000001.root size=6704999730 checksum=66d85f34
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404007987.00000001.root size=6115253954 checksum=c33d2e3a
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404012188.00000001.root size=4379533917 checksum=c5d46203
-path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404014971.00000001.root size=0 checksum=00000000
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404020541.00000001.root size=3870590196 checksum=457091a8
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404021912.00000001.root size=5958290602 checksum=2973731e
 path=/eos/ams/amsdatadisk/2014/ISS.B950/pass6/1404023327.00000001.root size=4713191345 checksum=b8cdc924
