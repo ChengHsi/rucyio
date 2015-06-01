@@ -93,7 +93,7 @@ def dictkey2set(target_dict):
     return result
 
 
-def dict2set(target_dict):
+def dict2set(target_dict, include_path=False):
     '''
     Return a set of the set of values in the target dictionary.
 
@@ -101,7 +101,10 @@ def dict2set(target_dict):
     {'1305955357.00733835.root': {'name': '1305955357.00733835.root', 'size': '0', 'adler32': '00000000 }}
     a set like set(('1305955357.00733835.root', '0', '00000000'), .....) would be returned
     '''
-    return set((i['name'], i['size'], i['adler32']) for i in target_dict.values())
+    if include_path:
+        return set((i['name'], i['size'], i['adler32'], i['path']) for i in target_dict.values())
+    else:
+        return set((i['name'], i['size'], i['adler32']) for i in target_dict.values())
 
 
 def set2dict(target_set):
@@ -146,19 +149,25 @@ def write_result(ori_name, new_name, result_tuple, duplicate_set=None, corrupted
     write_f2 = ori_dir + '/comparator_results/missing-from_%s_compare-to_%s_' % (new_name, ori_name) + timestamp
     write_f3 = ori_dir + '/comparator_results/duplicate-from_%s_compare-to_%s_' % (new_name, ori_name) + timestamp
     write_f4 = ori_dir + '/comparator_results/corrupted-from_%s_compare-to_%s_' % (new_name, ori_name) + timestamp
-    # write_result2(write_f, parse_set(result))
-    # write_result2(write_f2, parse_set(result2))
+    write_result2(write_f, parse_set(result), ori_dict)
+    write_result2(write_f2, parse_set(result2), new_dict)
     write_result2(write_f3, duplicate_set)
     write_result2(write_f4, corrupted_set)
 
 
-def write_result2(out_file, result):
+def write_result2(out_file, result, reference_dict=None):
     if result:
         print 'Write to:', out_file
         with open(out_file, 'w+') as f_write:
             for line in result:
-                f_write.write(line)
-                f_write.write('\n')
+                if reference_dict:
+                    import json
+                    to_write = json.dumps(reference_dict[line.replace('=', ' ').split()[1]]).rstrip('}').lstrip('{').replace('\"', '').replace(': ', '=').replace(',', '').replace('adler32', 'checksum')
+                    f_write.write(to_write)
+                    f_write.write('\n')
+                else:
+                    f_write.write(line)
+                    f_write.write('\n')
 
 
 def filename_trim(filename):
@@ -185,6 +194,8 @@ if __name__ == '__main__':
     new_name = sys.argv[2]
     new_path = os.path.abspath(new_name)
     new_name = sys.argv[2].split('/')[-1]
+    global ori_dict
+    global new_dict
     if args.vsimple:
         print 'Very simple compare.'
         result_tuple = sets_diff(ori_set=file2set(ori_path), new_set=file2set(new_path))
