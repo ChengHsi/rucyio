@@ -25,9 +25,9 @@ import datetime
 import errno
 import time
 # import pdb
-from blessings import Terminal
+# from blessings import Terminal
 
-term = Terminal()
+# term = Terminal()
 
 
 class Writer(object):
