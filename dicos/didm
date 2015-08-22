@@ -1,0 +1,776 @@
+#!/usr/bin/python
+import httplib
+import os
+import time
+import urlparse
+import re
+import simplejson as json
+# import lcg_util
+from zlib import adler32
+from sys import argv, exit, path
+path.append('/usr/local/dicos-client')
+
+
+op = ["index", "dataset", "list", "create",
+      "get", "getpath", "delete", "upload", "mv"]
+RUCIO = os.getenv('DDM')
+USER_PROXY = os.getenv('X509_USER_PROXY')
+CERT_DIR = os.getenv('X509_CERT_DIR')
+DDM_ACCOUNT = os.getenv('DDM_ACCOUNT')
+
+
+if USER_PROXY == None:
+    USER_PROXY = """/tmp/x509up_u%s""" % ( os.getuid() )
+
+if CERT_DIR == None:
+    CERT_DIR = """/etc/grid-security/certificates/"""
+
+if RUCIO == None:
+    ddm_server = """rucio-front03.grid.sinica.edu.tw"""
+    #ddm_server = """rucio.grid.sinica.edu.tw"""
+else:
+    ddm_server = RUCIO
+
+if DDM_ACCOUNT == None:
+    dm_account = os.getenv('USER')
+else:
+    dm_account = DDM_ACCOUNT
+
+
+conn = httplib.HTTPSConnection(
+    ddm_server, key_file=USER_PROXY, cert_file=USER_PROXY)
+
+
+def usage():
+    cmd = "|".join(op)
+    print "Usage: didm <" + cmd + ">"
+    print "Command example:"
+    print ""
+    print "didm index ==> list all scopes"
+    print "didm dataset [dataset name] [-l] ==> list all user datasets, or its contents by specify the dataset name"
+    print "didm list <scope name> ==> list all registered files in specific scope"
+    print "didm create <dataset name> <filename of data list> ==> create user dataset"
+    print "didm get <dataset name> ==> download all files from dataset or container"
+    print "didm getpath <[scope name:]dataset name> ==> Get xroot path"
+    print "didm upload <file> ==> upload file to storage"
+    print "didm delete <dataset name> [filename]  ==> delete user dataset or remove file from dataset"
+
+
+def err1():
+    print "ERROR!! Unable to get DDM token!! please make sure you have right grid credential!"
+    print ""
+    print "* You can use following command to get grid credential:"
+    print "voms-proxy-init -voms <your vo name>"
+    print ""
+    print "* If your web UI account name is not the same as lxplus account name, please set shell varible DDM_ACCOUNT to be your web UI account name:"
+    print "== For csh or tcsh =="
+    print "setenv DDM_ACCOUNT <your webUI account>"
+    print ""
+    print "== For sh or bash =="
+    print "export DDM_ACCOUNT=<your webUI account>"
+    print ""
+
+
+class ddm:
+
+    def __init__(self):
+        self.conn = httplib.HTTPSConnection(
+            ddm_server, key_file=USER_PROXY, cert_file=USER_PROXY)
+
+    def init_token(self):
+
+        conn = self.conn
+        myheaders = {"X_RUCIO_ACCOUNT": dm_account}
+        myuri = "/auth/x509_proxy"
+        conn.request('GET', myuri, headers=myheaders)
+        myinit = conn.getresponse()
+
+        if myinit.status == 200 and myinit.reason == 'OK':
+
+            mytoken = myinit.getheader('X-Rucio-Auth-Token', "None")
+
+            cachefile = "/tmp/token_u%s" % (os.getuid())
+            tokencachefile = open(cachefile, 'w')
+            tokencachefile.write(mytoken)
+            tokencachefile.close()
+            os.chmod(cachefile, 0600)
+        else:
+            # print myinit.status
+            print myinit.reason
+            err1()
+            # print myinit.read()
+            exit(1)
+
+    def validation(self, token):
+
+        conn = self.conn
+        myuri = "/auth/validate"
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+        myresponse = conn.getresponse()
+        # print myresponse.status
+        # print myresponse.reason
+        # print myresponse.read()
+        return myresponse.status
+
+    def QueryScopes(self, token, list_all=False):
+        conn = self.conn
+
+        myuri = "/scopes/"
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+        myresponse = conn.getresponse()
+        if myresponse.status == 200 and myresponse.reason == 'OK':
+            # print myresponse.status
+            # print myresponse.reason
+            d = myresponse.read()
+            #dm = ast.literal_eval(d)
+            #dm = [n.strip() for n in dm]
+            dm = json.loads(d)
+
+        else:
+            print myresponse.status
+            print myresponse.reason
+            dm = ["Error"]
+
+        return dm
+
+    def ListDatasets(self, token, scope, dataset=None, p=True, f=False):
+        conn = self.conn
+        if f == '*':
+            f = False
+        if dataset == None:
+            myuri = "/dids/%s/" % (scope)
+            dataset = ''
+        else:
+            dataset = dataset
+            myuri = "/dids/%s/%s/files" % (scope, dataset)
+        # print myuri
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+
+        myresponse = conn.getresponse()
+        # print myresponse.status
+        # print myresponse.reason
+        # print myresponse.read()
+        if myresponse.status == 200 and myresponse.reason == "OK":
+            h = myresponse.read()
+            b = h.splitlines()
+            allfiles = []
+            for n in b:
+                contents = json.loads(n)
+                if dataset == None:
+                    print contents["name"]
+                else:
+                    if p:
+                        print """%s:%s""" % (contents["scope"]  , contents["name"])
+                    if f:
+                        # print "filter = " + f
+                        # print "filename = " + contents["name"]
+                        if re.match(f, contents["name"]):
+                            allfiles.append(contents)
+                    else:
+                        allfiles.append(contents)
+        else:
+            print myresponse.status
+            print myresponse.reason
+            print myresponse.read()
+            exit(1)
+        return allfiles
+
+    def GetDid(self, token, scope, dataset=None, p=True):
+        conn = self.conn
+        if dataset == None:
+            myuri = "/dids/%s/" % (scope)
+            dataset = ''
+        else:
+            dataset = dataset
+            myuri = "/dids/%s/%s" % (scope, dataset)
+        # print myuri
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+
+        myresponse = conn.getresponse()
+        # print myresponse.status
+        # print myresponse.reason
+        # print myresponse.read()
+        if myresponse.status == 200 and myresponse.reason == "OK":
+            h = myresponse.read()
+            b = h.splitlines()
+            #allfiles = []
+            for n in b:
+                contents = json.loads(n)
+                did = contents
+        return did
+
+    def ParsePATH(self, Path):
+        # print "Parsing path"
+        struc = {}
+        struc["file"] = os.path.basename(Path)
+        if "/" in Path:
+            D = Path.split("/")
+            D.pop(D.index(struc["file"]))
+            if len(D) >= 1:
+                struc["dataset"] = D.pop(-1)
+            if len(D) > 1:
+                struc["container"] = D.pop(-1)
+            if len(D) > 1:
+                print "Error!! the data path structure would be wrong!!"
+                print "Right structure:"
+                print "<container>/<dataset>/<file>"
+                print "<dataset>/<file>"
+                print "<file>"
+                exit(1)
+
+        return struc
+
+    def Listfiles(self, token, scope):
+        conn = self.conn
+
+        myuri = "/dids/%s/" % (scope)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+
+        myresponse = conn.getresponse()
+        # print myresponse.status
+        # print myresponse.reason
+        # print myresponse.read()
+        if myresponse.status == 200 and myresponse.reason == "OK":
+
+            h = myresponse.read()
+            b = h.splitlines()
+            n = []
+            for d in b:
+
+                dataset = (json.loads(d)["name"])
+                myuri = "/dids/%s/%s/files" % (scope, dataset)
+                conn.request("GET", myuri, headers=myheaders)
+                r = conn.getresponse()
+                # print r.reason
+                for i in r.read().splitlines():
+                    try:
+                        mydata = json.loads(i)
+                        did = mydata["name"]
+                        myscope = mydata["scope"]
+                        print "%s:%s" % (myscope, did)
+                    except:
+                        pass
+        else:
+            print myresponse.status
+            print myresponse.reason
+
+        # return n
+
+    def newdataset(self, token, scope, dataset):
+        conn = self.conn
+        scope = scope
+        dataset = dataset
+        data = json.dumps({"type": "dataset"})
+
+        mydata = str(data)
+        #senddata = b64encode(mydata)
+        myuri = "/dids/%s/%s" % (scope, dataset)
+        print myuri
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("POST", myuri, mydata, headers=myheaders)
+        # conn.send(mydata)
+        myresponse = conn.getresponse()
+        if myresponse.status == 200 and myresponse.reason == "OK":
+            print myresponse.read()
+        else:
+            print myresponse.status
+            print myresponse.reason
+            print myresponse.read()
+
+    def add2dataset(self, token, tgtscope, tgtdataset, src):
+        mydata = {}
+        mydata["dids"] = src
+        # print mydata
+        senddata = json.dumps(mydata)
+        scope = tgtscope
+        dataset = tgtdataset
+
+        conn = self.conn
+        myuri = "/dids/%s/%s/dids" % (scope, dataset)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("POST", myuri, str(senddata), headers=myheaders)
+        # conn.send(senddata)
+        myresponse = conn.getresponse()
+        if (myresponse.status == 200 or myresponse.status == 201) and myresponse.reason == "Created":
+            # print myresponse.reason
+            print myresponse.read()
+            return 0
+        else:
+            print myresponse.status
+            print myresponse.reason
+            print myresponse.read()
+            return 1
+
+    def detaching(self, token, tgtscope, tgtdataset, src):
+        mydata = {}
+        mydata["dids"] = src
+        # print mydata
+        senddata = json.dumps(mydata)
+        scope = tgtscope
+        dataset = tgtdataset
+
+        conn = self.conn
+        myuri = "/dids/%s/%s/dids" % (scope, dataset)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("DELETE", myuri, str(senddata), headers=myheaders)
+        # conn.send(senddata)
+        myresponse = conn.getresponse()
+        if myresponse.status == 200 and myresponse.reason == "OK":
+            # print myresponse.reason
+            print myresponse.read()
+        else:
+            print myresponse.status
+            print myresponse.reason
+            print myresponse.read()
+
+    def DeleteDataset(self, token, scope, dataset):
+        conn = self.conn
+        myuri = "/dids/%s/%s" % (scope, dataset)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("DELETE", myuri,  headers=myheaders)
+        myresponse = conn.getresponse()
+        # print myresponse.status
+        print myresponse.reason
+        print myresponse.read()
+
+    def DeleteFile(self, token, scope, dataset, dids):
+        conn = self.conn
+        mydata = {'dids': dids}
+        senddata = json.dumps(mydata)
+        myuri = "/dids/%s/%s/dids" % (scope, dataset)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("DELETE", myuri, str(senddata), headers=myheaders)
+        myresponse = conn.getresponse()
+        print myresponse.reason
+        # print myresponse.read()
+
+    def DetachFile(self, token, scope, dids):
+        conn = self.conn
+
+    def GetPathes(self, token, scope, did, metadata=False):
+        conn = self.conn
+        pfns = None
+        myuri = "/replicas/%s/%s" % (scope, did)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+        r = conn.getresponse()
+        for i in r.read().splitlines():
+            try:
+                mydata = json.loads(i)
+                pfns = mydata["rses"].values()[0][0]
+                fsize = mydata["bytes"]
+                chksum = mydata["adler32"]
+                name = mydata["name"]
+            except:
+                pfns = "None"
+                fsize = 0
+                chksum = "None"
+                name = mydata["name"]
+            if metadata:
+                yield name, fsize, chksum
+            else:
+                yield pfns
+
+    def GetPFN(self, token, scope, did):
+        # https://rucio.grid.sinica.edu.tw/dids/$target/rses
+        conn = self.conn
+        pfns = None
+        # my#uri = "/dids/%s/%s/rses" % (scope, did)
+        myuri = "/replicas/%s/%s" % (scope, did)
+        myheaders = {"X-Rucio-Auth-Token": token}
+        conn.request("GET", myuri, headers=myheaders)
+        r = conn.getresponse()
+        # print r.reason
+        #pfns = []
+        for i in r.read().splitlines():
+            try:
+                mydata = json.loads(i)
+                # pfns.append(mydata["pfns"][0])
+                pfns = mydata["rses"]["TW-DPM01_AMS02SCRATCHDISK"][0]
+                fsize = mydata["bytes"]
+                chksum = mydata["adler32"]
+            except:
+                pfns = "None"
+                fsize = 0
+                chksum = "None"
+            # print mydata["pfns"][0]
+        return pfns, fsize, chksum
+
+# def HTTP_Redir(self, url):
+#  myurl =
+
+    def Download(self, url):
+        import subprocess
+        import urlparse
+        import shlex
+        from os import path
+        geturl = urlparse.urlparse(url, allow_fragments=True)
+        rse = geturl[1]
+        mypath = geturl[2]
+        myfilename = path.basename(mypath)
+        print "Downloading " + url
+        if geturl.scheme == 'https':
+            conn = httplib.HTTPSConnection(
+                rse, key_file=USER_PROXY, cert_file=USER_PROXY)
+            conn.request("HEAD", mypath)
+            r = conn.getresponse()
+            headers = dict(r.getheaders())
+            if headers.has_key('location') and headers['location'] != url:
+                dm_endpoint = headers['location']
+                dm_url = urlparse.urlparse(dm_endpoint)
+                dm_node = dm_url[1]
+                data_path = """%s?%s""" % ( dm_url[2], dm_url[4] )
+                dm_conn = httplib.HTTPSConnection(
+                    dm_node, key_file=USER_PROXY, cert_file=USER_PROXY)
+                dm_conn.request("GET", data_path)
+                newdata = dm_conn.getresponse()
+                CHUNK = 4194304
+                if newdata.status == 200:
+                    newfile = open(myfilename, 'wb')
+                    while True:
+                        new = newdata.read(CHUNK)
+                        if not new:
+                            break
+                        newfile.write(new)
+        elif geturl.scheme in ('xroot', 'root'):
+            cmd = 'xrdcp -f %s %s' % (url, myfilename)
+            proc = subprocess.Popen(
+                shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = proc.communicate()
+
+    def close(self):
+        conn = self.conn
+        conn.close()
+
+
+def submit_ddm(jobparam):
+    job = JobSpec()
+    jobList = []
+    job.transformation = """http://asgc-ui.grid.sinica.edu.tw/panda/transformations/user/user.hlee/ams-ddm"""
+    job.computingSite = "ANALY_TW_AMS"
+    jobsetID = int(time.time())
+    job.jobParameters = ' '
+    job.prodSourceLabel = "user"
+    job.VO = "ams02.cern.ch"
+    job.cloud = "TW"
+    job.jobParameters += json.dumps(jobparam)
+    job.jobName = "upload_" + jobparam["did"]
+    job.jobDefinitionID = 0
+    job.jobsetID = jobsetID
+    jobList.append(job)
+
+    status, output = Client.submitJobs(jobList, verbose=1)
+    if status != 0:
+        print "Job submission error!"
+        print output
+        o = "ERROR"
+    else:
+        o = output
+        # sys.exit(1)
+
+    return o
+
+
+def getAdler32(infile):
+
+    val = 1
+    BLOCKSIZE = 32 * 1024 * 1024
+    fp = open(infile)
+    while True:
+        data = fp.read(BLOCKSIZE)
+        if not data:
+            break
+        val = adler32(data, val)
+    if val < 0:
+        val += 2 ** 32
+    checksum = hex(val)[2:10].zfill(8).lower()
+
+    return checksum
+
+
+if __name__ == "__main__":
+    if len(argv) < 2:
+        usage()
+        exit(0)
+    if argv[1] not in op:
+        usage()
+        exit(0)
+
+    dm = ddm()
+    cachefile = "/tmp/token_u%s" % (os.getuid())
+    if not os.path.exists(cachefile):
+        print "Getting RUCIO token"
+        dm.init_token()
+
+    token = open(cachefile).readline().strip()
+    # print "Your token is:"
+    # print token
+
+    validation = dm.validation(token)
+    if validation != 200:
+        print "The token has been expired, try obtaining new one"
+        dm.init_token()
+        token = open(cachefile).readline().strip()
+
+    if argv[1] == "index":
+        d = dm.QueryScopes(token)
+        if len(argv) > 2:
+            scope = argv[2]
+        else:
+            scope = None
+        if not scope:
+            for i in d:
+                print i
+        else:
+            for i in d:
+                if scope in i:
+                    print i
+        exit(0)
+    elif argv[1] == "list":
+        if len(argv) < 3:
+            print "You must specify scope name!"
+            exit(1)
+        qry_scope = argv[2]
+        d = dm.Listfiles(token, qry_scope)
+        # print d
+        exit(0)
+    elif argv[1] == "dataset":
+        scope = "ams-user-%s" % dm_account
+        try:
+            if ':' in argv[2]:
+                scope, mydataset = argv[2].split(':')
+            else:
+                mydataset = argv[2]
+        except IndexError:
+            d = dm.ListDatasets(token, scope)
+            exit(0)
+        if len(argv) > 3:
+            if "-l" in argv:
+                total_size = 0
+                print """%s\t%s\t%s""" % ("Filesize", "Checksum", "Filename")
+                for did in dm.GetPathes(token, scope, mydataset, True):
+                    total_size += did[1]
+                    print """% 8s\t% 8s\t%s""" % (did[1], did[2], did[0])
+                print "Total size:", total_size, "Bytes"
+        else:
+            d = dm.ListDatasets(token, scope, mydataset)
+        # print d
+        exit(0)
+
+    elif argv[1] == "create":
+        #username = argv[2]
+        if len(argv) < 4:
+            print "Error! Insufficient arguments!"
+            usage()
+            exit(1)
+        mydataset = argv[2]
+        infile = argv[3]
+        data = open(infile).read().splitlines()
+        myin = []
+        myd = {}
+        l = 0
+        t = 0
+        myscope = "ams-user-%s" % (dm_account)
+        for i in data:
+            newd = i.split(":")
+            myd["scope"] = newd[0]
+            myd["name"] = newd[1]
+            myd["bytes"] = 1
+            #myd["md5"] = "1"
+            myd["adler32"] = "11111111"
+            myin.append(myd)
+            myd = {}
+            l += 1
+            t += 1
+            if l >= 500:
+                print "Creating new dataset: " + mydataset
+                dm.newdataset(token, myscope, mydataset)
+                print "Adding files into dataset"
+                dm.add2dataset(token, myscope, mydataset, myin)
+                l = 0
+                myin = []
+        print "Creating new dataset: " + mydataset
+        if len(myin) > 0:
+            dm.newdataset(token, myscope, mydataset)
+            print "Adding files into dataset"
+            attaching = dm.add2dataset(token, myscope, mydataset, myin)
+            if attaching == 0:
+                print "Done! %d file(s) added to dataset: %s" % (t, mydataset)
+            else:
+                print "Error! Fail to attach file into dataset: %s" % mydataset
+
+    elif argv[1] == "get":
+        if len(argv) > 2:
+            mydataset = argv[2]
+            if ':' in argv[2]:
+                scope, name = argv[2].split(':')
+            else:
+                scope = "ams-user-%s" % dm_account
+                name = argv[2]
+        else:
+            print "Please specify a container or dataset!"
+            usage()
+            exit(1)
+
+        for path in dm.GetPathes(token, scope, name):
+            dm.Download(path)
+
+    elif argv[1] == "mv":
+        #username = argv[2]
+        print "Moving files"
+        dids = []
+        if len(argv) < 4:
+            print "Error! Insufficient arguments!"
+            usage()
+            exit(1)
+        From_PATH = argv[2]
+        To_PATH = argv[3]
+        datapath = dm.ParsePATH(From_PATH)
+        if datapath.has_key("dataset"):
+            From_Did = datapath["dataset"]
+            F = datapath["file"]
+        else:
+            From_Did = From_PATH
+            F = False
+        myscope = "ams-user-%s" % (dm_account)
+        data = dm.ListDatasets(token, myscope, From_Did, p=False, f=F)
+        # print data
+        did = dm.GetDid(token, myscope, From_Did)
+        if did["type"] == "FILE":
+            isFile = True
+        else:
+            isFile = False
+        if To_PATH == "/":
+            toRoot = True
+        else:
+            toRoot = False
+
+        myin = []
+        myd = {}
+        l = 0
+        t = 0
+        for i in data:
+            #myd = i["name"]
+            myd = i
+            myd["adler32"] = str ("""%08x""" % int(i["adler32"]))
+            myin.append(myd)
+            myd = {}
+            l += 1
+            t += 1
+            if l >= 500:
+                print "Move file(s) from: " + From_Did
+                if not isFile:
+                    dm.detaching(token, myscope, From_Did, data)
+                print "To: " + To_PATH
+                if not toRoot:
+                    dm.add2dataset(token, myscope, To_PATH, data)
+                l = 0
+                myin = []
+        print "Move file(s) from: " + From_Did
+        if len(myin) > 0:
+            if not isFile:
+
+                dm.detaching(token, myscope, From_Did, data)
+            print "To: " + To_PATH
+            if not toRoot:
+                dm.add2dataset(token, myscope, To_PATH, data)
+        print "Done! Have moved %d file(s) to dataset: %s" % (t, To_PATH)
+
+    elif argv[1] == "getpath":
+        if len(argv) > 2:
+            if ':' in argv[2]:
+                scope, name = argv[2].split(':')
+            else:
+                scope = "ams-user-%s" % dm_account
+                name = argv[2]
+        else:
+            print "Please specify a container or dataset!"
+            usage()
+            exit(1)
+        for path in dm.GetPathes(token, scope, name):
+            print path
+
+    elif argv[1] == "delete":
+        if len(argv) > 2:
+            mydataset = argv[2]
+            myscope = "ams-user-%s" % (dm_account)
+        else:
+            print "You must give dataset name for removing"
+            usage()
+            exit(1)
+
+        if len(argv) == 3:
+            print "Sorry, currently, we haven't supported dataset deletion"
+            # print "Removing dataset " + mydataset
+            #dm.DeleteDataset(token, myscope, mydataset)
+
+        else:
+
+            data = argv[3:]
+            print "Removing " + " ".join(data) + " from " + mydataset
+            dids = []
+            for d in data:
+                r = d.split(":")
+                h = {"scope": r[0], "name": r[1]}
+                dids.append(h)
+
+            dm.DeleteFile(token, myscope, mydataset, dids)
+
+    elif argv[1] == "upload":
+        if len(argv) > 2:
+            myfile = argv[2]
+            if myfile == "-s":
+                if len(argv) < 4:
+                    print "WARNING! Status check reqires transfer id, e.g. didm update -s 140000000"
+                    exit(1)
+                try:
+                    tId = int(argv[3])
+                except:
+                    print "ERROR! The transfer Id must be an integer number!"
+                from TransferJob import Status
+                trStat = Status(tId).getResult()
+                print """%s\t%-20s\t%-20s\t%s""" % ("TransferID", "TransferStatus", "File", "Owner")
+                print """%s\t%-20s\t%-20s\t%s""" % tuple(trStat)
+                exit(0)
+            did = os.path.basename(myfile)
+            myscope = "ams-user-%s" % (dm_account)
+            size = os.path.getsize(myfile)
+            checksum = getAdler32(myfile)
+            path.append('/usr/local/dicos-client')
+            from SandboxStor import GFileHandler
+            GF = GFileHandler(myscope, myfile)
+            f = GF.ck_del_file()
+            if f != 0:
+                exit(0)
+            if GF.upload():
+                jobparam = {
+                    "did": did, "size": size, "checksum": checksum, "scope": myscope}
+                # if len(argv) > 3:
+                # jobparam["dataset"] = argv[3]
+                import copy
+                path.append('/usr/local/dicos-client')
+
+                from taskbuffer.JobSpec import JobSpec
+                from taskbuffer.FileSpec import FileSpec
+                import userinterface.Client as Client
+                from userinterface import curl_rc
+                import userinterface.myproxyUtils as myproxyUtils
+
+                o = submit_ddm(jobparam)
+                if o == "ERROR":
+                    print "Submit DDM failed, abort"
+                    dm.close()
+                    exit(1)
+                print "Transfer has been submitted sucessfully"
+                print "Transfer id is: " + str(o[0][0])
+            else:
+                print "Upload failed!"
+                dm.close()
+                exit(1)
+
+    dm.close()

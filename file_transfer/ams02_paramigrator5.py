@@ -25,6 +25,7 @@ import datetime
 import errno
 import time
 # import pdb
+import argparse
 from blessings import Terminal
 
 term = Terminal()
@@ -190,21 +191,30 @@ class ChecksumError(Exception):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), add_help=True, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('SourceFilelist', metavar='Filelist', type=str, help='Filelist')
+    parser.add_argument('--dest-SE', '-S', action='store_true', help='enter destination SE for transfer e.g:tw-eos03')
+    parser.add_argument('--source-prefix', '-s', action='store_true', help='enter source-prefix for transfer e.g: root://hp-disk1.gridi.sinica.edu.tw, default is set as root://eosams.cern.ch')
+    parser.add_argument('--dest-dir', '-d', action='store_true', help='enter destination diractory of the transfer. e.g: /eos/ams/amsdatadisk/2014/ISS.B950/pass6/')
+
+    args = parser.parse_args()
     file = str(sys.argv[1])
     write_dir = '/'.join(file.split('/')[:-1]) + '/result/'
     try:
-        destSE = str(sys.argv[2])
+        destSE = args.dest_SE
     except:
-        destSE = 'tw-eos03'
-
-    source_prefix = 'root://eosams.cern.ch/'
+        raise Exception('target SE is missing!')
+    try:
+        source_prefix = args.source_prefix
+    except:
+        source_prefix = 'root://eosams.cern.ch/'
     dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
     try:
-        dest_dir = str(sys.argv[3])
+        dest_dir = args.dest_dir
     except:
         raise Exception('Destination Directory is missing!')
         # dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
-    num_workers = 64
+    num_workers = 1
 
     manager = Manager()
     results = manager.list()

@@ -23,7 +23,7 @@ import signal
 import datetime
 import errno
 import time
-from blessings import Terminal
+# from blessings import Terminal
 
 
 def hash(scope, ori_line, rse_prefix):
@@ -37,7 +37,8 @@ def hash(scope, ori_line, rse_prefix):
     scope_struct = ''
     for struct in data_struct[:-1]:
         scope_struct += ('/' + struct)
-
+    # ori_line = data_struct[-1]
+    print '%s:%s' % (scope, ori_line)
     hstr = hashlib.md5('%s:%s' % (scope, ori_line)).hexdigest()
     return rse_prefix + 'MC/2011B' + scope_struct + '/%s/%s/%s' % (hstr[0:2], hstr[2:4], data_struct[-1].rstrip())
 
