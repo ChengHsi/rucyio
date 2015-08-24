@@ -19,30 +19,19 @@ from rucio.client.rseclient import RSEClient
 rseCli = RSEClient()
 from rucio.common import exception
 from filelist_comparator import eos_find2dict
+from rucio.common.utils import generate_uuid
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), add_help=True, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('Filename', metavar='Filelist', type=str, help='Filelist from eos find on target SE')
-    parser.add_argument('RSE name', metavar='RSE', type=str, help='Target RSE of the filelist')
+    parser.add_argument('--rse', metavar='rse', type=str, help='Target RSE of the filelist, e.g:TW-EOS01_AMS02DATADISK')
+    parser.add_argument('--scope', '-s', metavar='Scope', type=str, help='Scope to regisister the files; e.g:ams-2014-ISS.B950-pass6')
+    # parser.add_argument('--prefix', '-p', metavar='Prefix', type=str, help='Prefix of the Directory to register. e.g: /eos/ams/amsdatadisk/, /eos/ams/amsdatadisk/MC/2011B/')
     args = parser.parse_args()
-
-    argv_file = str(sys.argv[1])
-    # scope = 'ams-2011B-ISS.B620-pass4'
-    # scope = 'ams-2014-BT.B950-pr400.416'
-    scope = 'ams-2014-ISS.B950-pass6'
-    prefix = '/eos/ams/amsdatadisk/'
-    # prefix = '/eos/ams/amsdatadisk/MC/2011B/'
-    try:
-        rse_name = str(sys.argv[2])
-    except:
-        if 'tw-eos01' in sys.argv[1]:
-            rse_name = 'TW-EOS01_AMS02DATADISK'
-        elif 'tw-eos02' in sys.argv[1]:
-            rse_name = 'TW-EOS02_AMS02DATADISK'
-        elif 'tw-eos03' in sys.argv[1]:
-            rse_name = 'TW-EOS03_AMS02DATADISK'
+    argv_file = args.Filename
+    scope = args.scope
+    rse_name = args.rse
     did_dict = eos_find2dict(argv_file)
-    # import pdb; pdb.set_trace()
     for did in did_dict:
         # md5 = unicode(did_list[3])
         # pfn = prefix + scope + '/' + filename
@@ -52,11 +41,15 @@ if __name__ == '__main__':
         filename = did_dict[did]['name']
         bytes = int(did_dict[did]['size'])
         # did['md5'] = None
-        # did_dict[did]['guid'] = str(generate_uuid())
+        did_dict[did]['guid'] = str(generate_uuid())
+        guid = did_dict[did]['guid']
+        # import pdb; pdb.set_trace()
         # print did_dict[did]
+
         # break
         try:
-            repCli.add_replica(rse_name, scope, filename, bytes, adler32, pfn)
+            # import pdb; pdb.set_trace()
+            repCli.add_replica(rse_name, scope, filename, bytes, adler32, pfn, meta={'guid': guid}) 
             print 'Replica for %s:%s added' % (scope, filename)
             ruleCli.add_replication_rule(dids=[{'scope': scope, 'name': filename}], copies=1,
                                          rse_expression=rse_name, grouping='DATASET')
