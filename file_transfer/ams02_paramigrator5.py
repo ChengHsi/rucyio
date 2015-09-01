@@ -26,9 +26,9 @@ import errno
 import time
 # import pdb
 import argparse
-from blessings import Terminal
+# from blessings import Terminal
 
-term = Terminal()
+# term = Terminal()
 
 
 class Writer(object):
@@ -94,12 +94,15 @@ def do_work(in_queue, out_list):
         # exit signal
         if line is None:
             return
-        xrdcp(line)
+        if args.filepath_only:
+            xrdcp(line, True)
+        else:
+            xrdcp(line)
         # TODO: the out_list part is unessary
         out_list.append(line)
 
 
-def xrdcp(line):
+def xrdcp(line, simple=False):
     """
     This line is a line from eos find -f --checksum --size [Original_path] >> [filelist]
     It will look like:
@@ -107,16 +110,24 @@ def xrdcp(line):
     """
     # Parse the line into respective attributes
     file_dict = {}
-    for attr in line.split(' '):
-        # Add [path, size, checksum] as key to file_dict
-        file_dict[attr.split('=')[0]] = attr.split('=')[1]
-    file_dict['filename'] = file_dict['path'].split('/')[-1]
-    source_path = file_dict['path'].rstrip()
-    source_pfn = source_prefix + source_path
-    dest_path = dest_dir + file_dict['filename'].rstrip()
-    dest_pfn = dest_prefix + dest_path
-    cmd1 = 'xrdcp --cksum adler32:%s %s %s' % (file_dict['checksum'], source_pfn, dest_pfn)
-    # cmd1 = 'xrdcp --cksum adler32:%s %s %s -f' % ('ffffffff', source_pfn, dest_pfn)
+    if simple==True:
+        filename = line.split('/')[-1]
+        source_path = line.rstrip()
+        source_pfn = source_prefix + source_path
+        dest_path = dest_dir + filename.rstrip()
+        dest_pfn = dest_prefix + dest_path
+        cmd1 = 'xrdcp %s %s' % (source_pfn, dest_pfn)
+    elif simple==False:
+        for attr in line.split(' '):
+            # Add [path, size, checksum] as key to file_dict
+            file_dict[attr.split('=')[0]] = attr.split('=')[1]
+        file_dict['filename'] = file_dict['path'].split('/')[-1]
+        source_path = file_dict['path'].rstrip()
+        source_pfn = source_prefix + source_path
+        dest_path = dest_dir + file_dict['filename'].rstrip()
+        dest_pfn = dest_prefix + dest_path
+        cmd1 = 'xrdcp --cksum adler32:%s %s %s' % (file_dict['checksum'], source_pfn, dest_pfn)
+        #  cmd1 = 'xrdcp --cksum adler32:%s %s %s -f' % ('ffffffff', source_pfn, dest_pfn)
     print cmd1
 
     try:
@@ -193,12 +204,12 @@ class ChecksumError(Exception):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), add_help=True, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('SourceFilelist', metavar='Filelist', type=str, help='Filelist')
-    parser.add_argument('--dest-SE', '-S', action='store_true', help='enter destination SE for transfer e.g:tw-eos03')
-    parser.add_argument('--source-prefix', '-s', action='store_true', help='enter source-prefix for transfer e.g: root://hp-disk1.gridi.sinica.edu.tw, default is set as root://eosams.cern.ch')
-    parser.add_argument('--dest-dir', '-d', action='store_true', help='enter destination diractory of the transfer. e.g: /eos/ams/amsdatadisk/2014/ISS.B950/pass6/')
-
+    parser.add_argument('--dest-SE', '-S', metavar='Dest-SE', type=str, help='enter destination SE for transfer e.g:tw-eos03')
+    parser.add_argument('--source-prefix', '-s', metavar='Source-Prefix', type=str, help='enter source-prefix for transfer e.g: root://hp-disk1.gridi.sinica.edu.tw, default is set as root://eosams.cern.ch')
+    parser.add_argument('--dest-dir', '-d', metavar='Dest-Dir', type=str, help='enter destination diractory of the transfer. e.g: /eos/ams/amsdatadisk/2014/ISS.B950/pass6/')
+    parser.add_argument('--filepath-only',  action='store_true', help='check if filelist only consists of filepath')
     args = parser.parse_args()
-    file = str(sys.argv[1])
+    file = args.SourceFilelist
     write_dir = '/'.join(file.split('/')[:-1]) + '/result/'
     try:
         destSE = args.dest_SE
@@ -214,7 +225,7 @@ if __name__ == "__main__":
     except:
         raise Exception('Destination Directory is missing!')
         # dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
-    num_workers = 1
+    num_workers = 24
 
     manager = Manager()
     results = manager.list()
