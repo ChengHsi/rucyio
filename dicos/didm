@@ -147,7 +147,6 @@ class ddm:
             myuri = "/dids/%s/%s/files" % (scope, dataset)
         # print myuri
         myheaders = {"X-Rucio-Auth-Token": token}
-        import pdb; pdb.set_trace()
         conn.request("GET", myuri, headers=myheaders)
 
         myresponse = conn.getresponse()

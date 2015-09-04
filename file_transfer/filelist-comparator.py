@@ -11,7 +11,7 @@ the FilelistComparator diff the two lists and output two diff result in the ./co
 import os
 import sys
 import argparse
-
+import json
 
 def eos_find2dict(filepath):
     '''
@@ -165,6 +165,7 @@ def write_result2(out_file, result, reference_dict=None):
                     to_write = json.dumps(reference_dict[line.replace('=', ' ').split()[1]]).rstrip('}').lstrip('{').replace('\"', '').replace(': ', '=').replace(',', '').replace('adler32', 'checksum')
                     f_write.write(to_write)
                     f_write.write('\n')
+                # elif 'duplicate  in 'out_file:
                 else:
                     f_write.write(line)
                     f_write.write('\n')
@@ -209,13 +210,17 @@ if __name__ == '__main__':
         new_dict = eos_find2dict(new_path)
         result_tuple = sets_diff(ori_set=dict2set(ori_dict), new_set=dict2set(new_dict))
         duplicate_path_set = set()
+        duplicate_path_list = []
         if args.check_duplicate:
+            # import pdb; pdb.set_trace()
             duplicate_set = dict2set(ori_dict) & dict2set(new_dict)
             for i in duplicate_set:
-                duplicate_path_set.add(ori_dict[i[0]]['path'])
+                # duplicate_path_set.add(ori_dict[i[0]]['path'])
+                duplicate_path_list.append(json.dumps(ori_dict[i[0]]).rstrip('}').lstrip('{').replace('=', ' ').replace('\"', '').replace(': ', '=').replace(', ', ' ').replace('adler32', 'checksum'))
         corrupted_set = dictkey2set(set2dict(result_tuple[0])) & dictkey2set(set2dict(result_tuple[1]))
         corrupted_path_set = set()
         if corrupted_set:
             for i in list(corrupted_set):
                 corrupted_path_set.add(ori_dict[i]['path'])
-    write_result(ori_name, new_name, result_tuple, duplicate_path_set, corrupted_path_set)
+    # write_result(ori_name, new_name, result_tuple, duplicate_path_set, corrupted_path_set)
+    write_result(ori_name, new_name, result_tuple, duplicate_path_list, corrupted_path_set)
