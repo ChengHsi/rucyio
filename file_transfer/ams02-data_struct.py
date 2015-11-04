@@ -20,6 +20,7 @@ def default_struct(filelist, scope):
         attachments = {}
         for line in file01:
             did = line.replace('=', ' ').split()[1].split('/')[-1]
+            path = line.replace('=', ' ').split()[1]
             ts_epoch = int(did.split('.')[0])
             container = datetime.datetime.fromtimestamp(ts_epoch).strftime('%Y-%m-%d')
             dataset = datetime.datetime.fromtimestamp(ts_epoch).strftime('%Y-%m-%d_%H')
@@ -31,11 +32,12 @@ def default_struct(filelist, scope):
                     pass
                 previous_container = container
             metadata = didCli.get_metadata(scope, did.rstrip())
-            print metadata
+            # print metadata
             if previous_dataset != dataset:
                 if attachments:
-                    # print 'Trying to attach:', attachments.values()
+                    print 'Trying to attach:', attachments.values()
                     try:
+                        # import pdb; pdb.set_trace()
                         didCli.attach_dids_to_dids(attachments.values())
                         print 'Attached:', attachments.values()
                         # raw_input("Press Enter to continue...")
@@ -63,12 +65,13 @@ def default_struct(filelist, scope):
                     else:
                         print e
                 # print '| |-', did.rstrip()
-                attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS01_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes']}]}
+                attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS02_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': path}]}
+                # attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS02_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes']}]}
                 attachments[dataset] = attachment
                 previous_dataset = dataset
             elif previous_dataset == dataset:
                 # print '| |-', did.rstrip()
-                attachments[dataset]['dids'].append({'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes']})
+                attachments[dataset]['dids'].append({'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': path})
             else:
                 raise Exception('Didn\'t expect this!')
 
