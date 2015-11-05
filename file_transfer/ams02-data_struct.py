@@ -37,7 +37,6 @@ def default_struct(filelist, scope):
                 if attachments:
                     print 'Trying to attach:', attachments.values()
                     try:
-                        # import pdb; pdb.set_trace()
                         didCli.attach_dids_to_dids(attachments.values())
                         print 'Attached:', attachments.values()
                         # raw_input("Press Enter to continue...")
@@ -65,13 +64,14 @@ def default_struct(filelist, scope):
                     else:
                         print e
                 # print '| |-', did.rstrip()
-                attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS02_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': path}]}
+                pfn = 'xroot://tw-eos02.grid.sinica.edu.tw:1094/' + path
+                attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS02_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': pfn}]}
                 # attachment = {'scope':scope, 'name': dataset, 'rse': 'TW-EOS02_AMS02DATADISK', 'dids': [{'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes']}]}
                 attachments[dataset] = attachment
                 previous_dataset = dataset
             elif previous_dataset == dataset:
                 # print '| |-', did.rstrip()
-                attachments[dataset]['dids'].append({'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': path})
+                attachments[dataset]['dids'].append({'scope':scope, 'name':did.rstrip(), 'bytes':metadata['bytes'], 'pfn': pfn})
             else:
                 raise Exception('Didn\'t expect this!')
 
