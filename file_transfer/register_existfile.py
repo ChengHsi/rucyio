@@ -26,17 +26,20 @@ if __name__ == '__main__':
     parser.add_argument('Filename', metavar='Filelist', type=str, help='Filelist from eos find on target SE')
     parser.add_argument('--rse', metavar='rse', type=str, help='Target RSE of the filelist, e.g:TW-EOS01_AMS02DATADISK')
     parser.add_argument('--scope', '-s', metavar='Scope', type=str, help='Scope to regisister the files; e.g:ams-2014-ISS.B950-pass6')
+    parser.add_argument('--se-acrym', '-sa', metavar='SE', type=str, help='se name for pfn; e.g:tw-eos01')
     # parser.add_argument('--prefix', '-p', metavar='Prefix', type=str, help='Prefix of the Directory to register. e.g: /eos/ams/amsdatadisk/, /eos/ams/amsdatadisk/MC/2011B/')
     args = parser.parse_args()
     argv_file = args.Filename
     scope = args.scope
     rse_name = args.rse
+    se = args.se_acrym
     did_dict = eos_find2dict(argv_file)
     for did in did_dict:
         # md5 = unicode(did_list[3])
         # pfn = prefix + scope + '/' + filename
         # scope = did_dict[did]['scope']
-        pfn = 'xroot://tw-eos03.grid.sinica.edu.tw:1094/' + did_dict[did]['path']
+        # import pdb ;pdb.set_trace()
+        pfn = 'xroot://' + se + '.grid.sinica.edu.tw:1094/' + did_dict[did]['path']
         adler32 = did_dict[did]['adler32']
         filename = did_dict[did]['name']
         bytes = int(did_dict[did]['size'])
