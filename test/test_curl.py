@@ -1,14 +1,25 @@
 import subprocess
 import shlex
+real = True 
 
-cacert = '/etc/grid-security/certificates/ASGCCA-2007.pem'
-server = 'https://rucio.grid.sinica.edu.tw:443'
-x509_proxy = '/tmp/x509up_u500_amspil'
-scope = 'ams-2014-ISS.B950-pass6'
-dataset = '2011-05-20_01'
-name = '1305853512.00000001.root'
-account = '\"root\"'
-token = ''
+if real:
+    cacert = '/etc/grid-security/certificates/ASGCCA-2007.pem'
+    server = 'https://rucio.grid.sinica.edu.tw:443'
+    x509_proxy = '/tmp/x509up_u500_amspil'
+    scope = 'ams-2014-ISS.B950-pass6'
+    dataset = '2011-05-20_01'
+    name = '1305853512.00000001.root'
+    account = '\"root\"'
+    token = ''
+else:
+    cacert = '$CertificatesPATH'
+    server = 'https://rucio.grid.sinica.edu.tw:443'
+    x509_proxy = '/tmp/x509up_u500_amspil'
+    scope = '$SCOPE'
+    dataset = '$NAME'
+    name = '$NAME'
+    account = '\"$Account\"'
+    token = '$TOKEN'
 # get Rucio token
 # cmd = "curl -i --cacert %s -X GET -H \"X-Rucio-Account: root\" -E %s %s/auth/userpass" %(cacert, x509_proxy, server)
 
@@ -26,7 +37,7 @@ class BaseCurl(object):
         sub = subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
         result = sub.communicate()[0]
         if 'userpass' in cmd:
-    	    token = result[result.index('X-Rucio-Auth-Token:')+len('X-Rucio-Auth-Token:')+1:result.index('Content-Length')].rstrip()
+            token = result[result.index('X-Rucio-Auth-Token:')+len('X-Rucio-Auth-Token:')+1:result.index('Content-Length')].rstrip()
         print result + '\n'
 
     
@@ -80,4 +91,5 @@ class Replica(BaseCurl):
         self.test_curl(cmd)
 
 x = Replica()
-
+y = DID()
+z = Scope()
