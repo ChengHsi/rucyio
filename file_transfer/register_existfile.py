@@ -4,6 +4,8 @@ Register Exist Files
 Take a list of dictionaries of files that exist on SE,
 add to Rucio DB.
 Should be taking a list of JSON files instead?
+
+Ex: python ~/rucyio/file_transfer/register_existfile.py --scope ams-2014-ISS.B950-pass6-sada --se-acrym tw-eos01 --rse TW-EOS01_NONDET_AMS02SCRATCHDISK ~/chchao/rucyio/file_transfer/filelists/tw-eos01-pass6-haino-root-output
 """
 import argparse
 import os
@@ -28,12 +30,26 @@ if __name__ == '__main__':
     parser.add_argument('--scope', '-s', metavar='Scope', type=str, help='Scope to regisister the files; e.g:ams-2014-ISS.B950-pass6')
     parser.add_argument('--se-acrym', '-sa', metavar='SE', type=str, help='se name for pfn; e.g:tw-eos01')
     # parser.add_argument('--prefix', '-p', metavar='Prefix', type=str, help='Prefix of the Directory to register. e.g: /eos/ams/amsdatadisk/, /eos/ams/amsdatadisk/MC/2011B/')
+    parser.add_argument('--dry-run', '-d', action='store_true', help='Do a dryrun of the registration.')
     args = parser.parse_args()
     argv_file = args.Filename
     scope = args.scope
     rse_name = args.rse
     se = args.se_acrym
     did_dict = eos_find2dict(argv_file)
+    if args.dry_run:
+        print 'dry run'
+        for did in did_dict:
+            pfn = 'xroot://' + se + '.grid.sinica.edu.tw:1094/' + did_dict[did]['path']
+            adler32 = did_dict[did]['adler32']
+            filename = did_dict[did]['name']
+            bytes = int(did_dict[did]['size'])
+            did_dict[did]['guid'] = str(generate_uuid())
+            guid = did_dict[did]['guid']
+            print 'pfn:', pfn
+            print did_dict[did]
+            break
+        sys.exit() 
     for did in did_dict:
         # md5 = unicode(did_list[3])
         # pfn = prefix + scope + '/' + filename
