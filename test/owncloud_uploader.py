@@ -30,6 +30,8 @@ class OwncloudUploader(object):
         if 'user' in self.fscope:
             username = self.fscope.split('-')[-1]
             additional_prefix = '%s/%s' %(username[0], username)
+        else:
+            raise Exception('I don\'t think you have the right scope: %s'  %(self.fscope))
         return '%s://%s:%s/%s%s/%s' % (protocol['scheme'], protocol['hostname'], protocol['port'], protocol['prefix'], additional_prefix, os.path.basename(self.name))
     def make_file_list(self):
         '''
