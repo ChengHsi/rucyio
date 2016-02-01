@@ -43,9 +43,9 @@ class Writer(object):
         """
         self.location = location
 
-    def write(self, string):
-        with term.location(*self.location):
-            print(string)
+    # def write(self, string):
+    #     with term.location(*self.location):
+    #         print(string)
 
 
 def write(filepath, message):
@@ -110,14 +110,14 @@ def xrdcp(line, simple=False):
     """
     # Parse the line into respective attributes
     file_dict = {}
-    if simple==True:
+    if simple:
         filename = line.split('/')[-1]
         source_path = line.rstrip()
         source_pfn = source_prefix + source_path
         dest_path = dest_dir + filename.rstrip()
         dest_pfn = dest_prefix + dest_path
         cmd1 = 'xrdcp %s %s' % (source_pfn, dest_pfn)
-    elif simple==False:
+    elif simple is False:
         for attr in line.split(' '):
             # Add [path, size, checksum] as key to file_dict
             file_dict[attr.split('=')[0]] = attr.split('=')[1]
@@ -126,8 +126,8 @@ def xrdcp(line, simple=False):
         source_pfn = source_prefix + source_path
         dest_path = dest_dir + file_dict['filename'].rstrip()
         dest_pfn = dest_prefix + dest_path
-        cmd1 = 'xrdcp --cksum adler32:%s %s %s' % (file_dict['checksum'], source_pfn, dest_pfn)
-        #  cmd1 = 'xrdcp --cksum adler32:%s %s %s -f' % ('ffffffff', source_pfn, dest_pfn)
+        # cmd1 = 'xrdcp --cksum adler32:%s %s %s' % (file_dict['checksum'], source_pfn, dest_pfn)
+        cmd1 = 'xrdcp %s %s' % (source_pfn, dest_pfn)
     print cmd1
 
     try:
@@ -205,9 +205,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), add_help=True, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('SourceFilelist', metavar='Filelist', type=str, help='Filelist')
     parser.add_argument('--dest-SE', '-S', metavar='Dest-SE', type=str, help='enter destination SE for transfer e.g:tw-eos03')
+    parser.add_argument('--worker-num', '-n', metavar='Work-Num', type=int, help='Number of workers running in parrellel.')
     parser.add_argument('--source-prefix', '-s', metavar='Source-Prefix', type=str, help='enter source-prefix for transfer e.g: root://hp-disk1.gridi.sinica.edu.tw, default is set as root://eosams.cern.ch')
     parser.add_argument('--dest-dir', '-d', metavar='Dest-Dir', type=str, help='enter destination diractory of the transfer. e.g: /eos/ams/amsdatadisk/2014/ISS.B950/pass6/')
-    parser.add_argument('--filepath-only',  action='store_true', help='check if filelist only consists of filepath')
+    parser.add_argument('--filepath-only', action='store_true', help='check if filelist only consists of filepath')
     args = parser.parse_args()
     file = args.SourceFilelist
     write_dir = '/'.join(file.split('/')[:-1]) + '/result/'
@@ -219,13 +220,18 @@ if __name__ == "__main__":
         source_prefix = args.source_prefix
     except:
         source_prefix = 'root://eosams.cern.ch/'
-    dest_prefix = 'root://%s.grid.sinica.edu.tw/' % (destSE)
+    dest_prefix = 'root://%s.grid.sinica.edu.tw:1094/' % (destSE)
     try:
         dest_dir = args.dest_dir
     except:
         raise Exception('Destination Directory is missing!')
         # dest_dir = '/eos/ams/amsdatadisk/2014/ISS.B950/pass6/'
-    num_workers = 24
+    try:
+        num_workers = args.worker_num
+    except Exception as e:
+        print 'Debug mode.'
+        print e
+        num_workers = 1
 
     manager = Manager()
     results = manager.list()
