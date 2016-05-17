@@ -34,10 +34,15 @@ def eos_find2dict(filepath):
                 file_spec = re.split('=|\s', file_spec)
                 filename = file_spec[1].split('/')[-1:][0]
                 # result_dict[filename] = {'name': filename, 'size': file_spec[3], 'adler32': file_spec[5]}
-                result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
+                if len(file_spec[5]) == 8:
+                    result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
+                elif len(file_spec[5]) == 32:
+                    result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'md5': file_spec[5]}
             return result_dict
         except:
-            raise Exception('This function requires the input file to be from eos find -f --size --checksum!')
+            # raise Exception('This function requires the input file to be from eos find -f --size --checksum!')
+            result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1]}
+            return result_dict
 
 
 def result2dict(filepath):
