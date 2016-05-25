@@ -13,7 +13,7 @@ import sys
 import argparse
 import json
 
-def eos_find2dict(filepath):
+def eos_find2dict(filepath, already_dict=False):
     '''
     Recieve filelist results from eos find -f --size --checksum and returns JSON-like dictionary of files and its attributes.
 
@@ -28,21 +28,33 @@ def eos_find2dict(filepath):
     result_dict = {}
     with open(filepath) as f1:
         import re
-        try:
+        if already_dict:
             for line in f1:
-                file_spec = line.rstrip()
-                file_spec = re.split('=|\s', file_spec)
-                filename = file_spec[1].split('/')[-1:][0]
-                # result_dict[filename] = {'name': filename, 'size': file_spec[3], 'adler32': file_spec[5]}
-                if len(file_spec[5]) == 8:
-                    result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
-                elif len(file_spec[5]) == 32:
-                    result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'md5': file_spec[5]}
+                json_acceptable_string = line.replace("'", "\"")
+                line = json.loads(json_acceptable_string)
+                filename = line['name']
+                try:
+                    result_dict[filename] = dict((k, line[k]) for k in ('size','name','path','adler32'))
+                except:
+                    result_dict[filename] = dict((k, line[k]) for k in ('size','name','path','md5'))
             return result_dict
-        except:
-            # raise Exception('This function requires the input file to be from eos find -f --size --checksum!')
-            result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1]}
-            return result_dict
+        else:
+            try:
+                for line in f1:
+                    file_spec = line.rstrip()
+                    file_spec = re.split('=|\s', file_spec)
+                    filename = file_spec[1].split('/')[-1:][0]
+                    # result_dict[filename] = {'name': filename, 'size': file_spec[3], 'adler32': file_spec[5]}
+                    import pdb; pdb.set_trace()
+                    if len(file_spec[5]) == 8:
+                        result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'adler32': file_spec[5]}
+                    elif len(file_spec[5]) == 32:
+                        result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1], 'md5': file_spec[5]}
+                return result_dict
+            except:
+                # raise Exception('This function requires the input file to be from eos find -f --size --checksum!')
+                result_dict[filename] = {'size': file_spec[3], 'name': filename, 'path': file_spec[1]}
+                return result_dict
 
 
 def result2dict(filepath):
